@@ -41,15 +41,15 @@ const verbs = new Set([
 ]);
 const isValidHTTPVerb = (verb) => verbs.has(verb);
 const basicWASMlangs = new Set(["js", "javascript", "html", "css"]);
-const basicWASMMIMEs = {
-  "application/javascript": new Set(["js", "javascript"]),
-  "text/html": new Set(["html"]),
-  "text/css": new Set(["css"]),
-};
-const getBasicMIME = (type) =>
-  Object.keys(basicWASMMIMEs).find((key) =>
-    basicWASMMIMEs[key].has(type.toLowerCase())
-  ) || "text/plain";
+const basicWASMMIMEs = new Map(
+  Object.entries({
+    js: "text/javascript",
+    javascript: "text/javascript",
+    html: "text/html",
+    css: "text/css",
+  })
+);
+const getBasicMIME = (type) => basicWASMMIMEs.get(type) || "text/plain";
 const isValidBaseWASM = (type) => basicWASMlangs.has(type.toLowerCase());
 
 const setupRoute = (obj, func) => {
