@@ -11,11 +11,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use((req, res, next) => {
   console.log(`🛠 Middleware detected: ${req.method} ${req.url}`);
-  req.headers["user-agent"].includes("DevKit")
-    ? (req.isDevKitRequest = true)
-    : (req.isDevKitRequest = false);
+  req.isDevKitRequest = req.headers["user-agent"]?.includes("DevKit") || false;
   next();
 });
 
@@ -38,51 +39,37 @@ const verbs = new Set([
   "connect",
   "trace",
 ]);
-const basicWASMlangs = new Set([
-  "js",
-  "javascript",
-  "application/javascript",
-  "html",
-  "text/html",
-  "css",
-  "text/css",
-]);
-const basicWASMMIMEs = {
-  "application/javascript": new Set([
-    "js",
-    "javascript",
-    "application/javascript",
-  ]),
-  "text/html": new Set(["html", "text/html"]),
-  "text/css": new Set(["css", "text/css"]),
-};
-
-const getBasicMIME = (type) => {
-  for (const key of Object.keys(basicWASMMIMEs)) {
-    if (basicWASMMIMEs[key].has(type.toLowerCase())) return key;
-  }
-  return null;
-};
-const isValidBaseWASM = (type) => basicWASMlangs.has(type);
 const isValidHTTPVerb = (verb) => verbs.has(verb);
+const basicWASMlangs = new Set(["js", "javascript", "html", "css"]);
+const basicWASMMIMEs = {
+  "application/javascript": new Set(["js", "javascript"]),
+  "text/html": new Set(["html"]),
+  "text/css": new Set(["css"]),
+};
+const getBasicMIME = (type) =>
+  Object.keys(basicWASMMIMEs).find((key) =>
+    basicWASMMIMEs[key].has(type.toLowerCase())
+  ) || "text/plain";
+const isValidBaseWASM = (type) => basicWASMlangs.has(type.toLowerCase());
 
-const setupRoute = (obj) => {
+const setupRoute = (obj, func) => {
   const reqType = obj.requestType?.toLowerCase();
-
   console.log(`🔹 Setting up route: ${obj.route} [${reqType}]`);
 
   app[reqType](obj.route, async (req, res) => {
-    console.log(
-      `📥 Incoming request: ${req.method} ${req.url} | DevKit: ${req.isDevKitRequest}`
-    );
+    console.log(`📥 Incoming ${req.method} request: ${req.url}`);
+
+    if (func && typeof func === "function") {
+      console.log(`🔧 Custom handler for ${obj.route}`);
+      return func(req, res);
+    }
 
     let ret =
       "This content cannot be displayed as you do not have the necessary";
-
     if (isValidBaseWASM(obj.type)) {
       console.log(`📖 Reading file: ${obj.file}`);
       try {
-        ret = await readFile(join(__dirname, req.file), "utf8");
+        ret = await readFile(join(__dirname, obj.file), "utf8");
       } catch (error) {
         console.error(`🚨 Error reading file ${obj.file}:`, error.message);
         return res
@@ -103,26 +90,64 @@ const setupRoute = (obj) => {
 };
 
 (async () => {
-  if (existsSync(join(__dirname, "DKRoute"))) {
-    const rawData = await readFile(join(__dirname, "DKRoute"), "utf8");
-    if (isValidJSON(rawData)) {
-      const json = JSON.parse(rawData);
-      if (Array.isArray(json)) json.forEach(setupRoute);
-      else setupRoute(json);
+  const dkRoutePath = join(__dirname, "DKRoute");
+  if (!existsSync(dkRoutePath)) throw new Error("❌ DKRoute file not found!");
 
-      app.get("/test", (req, res) => {
-        console.log("📥 Test route reached!");
-        res.send("✅ Test route is working!");
-      });
+  const rawData = await readFile(dkRoutePath, "utf8");
+  if (!isValidJSON(rawData)) throw new Error("❌ Invalid DKRoute JSON!");
 
-      const PORT = process.env.PORT || 80;
-      app.listen(PORT, () => {
-        console.log(`🚀 DevKit Server running on port ${PORT}`);
-        console.log("🔍 Checking registered routes:");
-        console.log(
-          app._router.stack.map((r) => r.route?.path).filter(Boolean)
+  const json = JSON.parse(rawData);
+  if (Array.isArray(json)) {
+    for (const obj of json) {
+      if (
+        obj.func &&
+        typeof obj.func === "string" &&
+        existsSync(join(__dirname, obj.func))
+      ) {
+        try {
+          const func = await import(join(__dirname, obj.func));
+          setupRoute(obj, func.default);
+        } catch (error) {
+          console.error(
+            `❌ Error loading function for ${obj.route}: ${error.message}`
+          );
+          setupRoute(obj);
+        }
+      } else {
+        setupRoute(obj);
+      }
+    }
+  } else {
+    if (
+      json.func &&
+      typeof json.func === "string" &&
+      existsSync(join(__dirname, json.func))
+    ) {
+      try {
+        const func = await import(join(__dirname, json.func));
+        setupRoute(json, func.default);
+      } catch (error) {
+        console.error(
+          `❌ Error loading function for ${json.route}: ${error.message}`
         );
-      });
-    } else throw new Error("Your DKRoute is not valid JSON!");
-  } else throw new Error("You do not have a DKRoute file set up, or it is not in the directory you are running this in!");
+        setupRoute(json);
+      }
+    } else {
+      setupRoute(json);
+    }
+  }
+
+  app.get("/test", (req, res) => {
+    console.log("📥 Test route reached!");
+    res.send("✅ Test route is working!");
+  });
+
+  const PORT = process.env.PORT || 4200;
+  app.listen(PORT, () => {
+    console.log(`🚀 DevKit Server running on port ${PORT}`);
+    console.log(
+      "🔍 Registered routes:",
+      app._router.stack.map((r) => r.route?.path).filter(Boolean)
+    );
+  });
 })();
