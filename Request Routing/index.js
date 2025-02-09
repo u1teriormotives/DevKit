@@ -1,8 +1,14 @@
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
 import express from "express";
 import "dotenv/config";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 app.use((req, res, next) => {
@@ -76,7 +82,7 @@ const setupRoute = (obj) => {
     if (isValidBaseWASM(obj.type)) {
       console.log(`📖 Reading file: ${obj.file}`);
       try {
-        ret = await readFile(obj.file, "utf8");
+        ret = await readFile(join(__dirname, req.file), "utf8");
       } catch (error) {
         console.error(`🚨 Error reading file ${obj.file}:`, error.message);
         return res
@@ -97,8 +103,8 @@ const setupRoute = (obj) => {
 };
 
 (async () => {
-  if (existsSync("DKRoute")) {
-    const rawData = await readFile("DKRoute", "utf8");
+  if (existsSync(join(__dirname, "DKRoute"))) {
+    const rawData = await readFile(join(__dirname, "DKRoute"), "utf8");
     if (isValidJSON(rawData)) {
       const json = JSON.parse(rawData);
       if (Array.isArray(json)) json.forEach(setupRoute);
@@ -118,5 +124,5 @@ const setupRoute = (obj) => {
         );
       });
     } else throw new Error("Your DKRoute is not valid JSON!");
-  } else throw new Error("You do not have a DKRoute file set up!");
+  } else throw new Error("You do not have a DKRoute file set up, or it is not in the directory you are running this in!");
 })();
