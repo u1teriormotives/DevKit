@@ -48,3 +48,9 @@ This would be equivalent to:
 </html>
 ```
 View the Trello board [here](https://trello.com/b/jHqNVvh4/devkit-timeline)
+
+## Current News / Roadmap:
+- Routing System:
+  - Coded main functionality (yes)
+  - Published to NPM (yes)
+  - Add more language support (working on)
