@@ -142,7 +142,7 @@ const setupRoute = (obj, func) => {
     res.send("✅ Test route is working!");
   });
 
-  const PORT = process.env.PORT || 4200;
+  const PORT = process.env.PORT || 80;
   app.listen(PORT, () => {
     console.log(`🚀 DevKit Server running on port ${PORT}`);
     console.log(
