@@ -11,6 +11,6 @@
   "skipLibCheck": true,
   "resolveJsonModule": true
   },
-  "include": ["*.ts"],
+  "include": ["*.ts", "HTMLElements/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
