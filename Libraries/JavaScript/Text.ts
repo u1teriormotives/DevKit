@@ -2,7 +2,7 @@ import { Element } from "./Element"
 
 export default class Text {
     public readonly assignedSlot: Element | null = null;
-    public readonly wholeText: Text;
+    public readonly wholeText: Text | null = null;
 
     private textContent: string;
     constructor(text: string) {
