@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -115,6 +116,13 @@ func main() {
 					panic(e)
 				}
 			}
+			fmt.Println("Running \x1b[97mnpm i express\x1b[0m")
+			cmd := exec.Command("npm", "i", "express")
+			out, e := cmd.CombinedOutput()
+			if e != nil {
+				panic(e)
+			}
+			fmt.Println("Output from npm:", string(out))
 		}
 	}
 }
