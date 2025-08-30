@@ -21,6 +21,8 @@ func getCSharpEndpoints() []string {
 	}
 }
 
+var CSHARP_ENDPOINTS []string = getCSharpEndpoints()
+
 func main() {
 	argc := len(os.Args) - 1
 	argv := make([]string, argc)
