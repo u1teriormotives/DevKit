@@ -62,9 +62,9 @@ func main() {
 				}
 				fmt.Println("Written JavaScript router to", routePath)
 
-				if os.Chmod(routePath, 0755) != nil {
-					var error string = "CHMOD error! You must not have permission to modify " + routePath + "! Are you sure you're in your own user directory?"
-					panic(error)
+				e = os.Chmod(routePath, 0755)
+				if e != nil {
+					panic(e)
 				}
 				fmt.Println("Modified", routePath, "to allow for manual execution via the command line!")
 			}
