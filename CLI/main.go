@@ -206,13 +206,27 @@ func main() {
 					panic(e)
 				}
 				const cont string = `{
-  "router": "javascript",
+  "router": "c-sharp",
   "mainFilePath": "%s"
 }`
 				e = file(filepath.Join(dir, ".dk", "route-config.json"), fmt.Sprintf(cont, filepath.Join(dir, "Program.cs")), RW)
 				if e != nil {
 					panic(e)
 				}
+			}
+		}
+	} else if mainCommand == "run" {
+		secondaryCommand := argv[1]
+
+		if secondaryCommand == "router" {
+			_, e := os.Stat(filepath.Join(dir, ".dk", "route-config.json"))
+			if e == nil {
+				cont, e := os.ReadFile(filepath.Join(dir, ".dk", "route-config.json"))
+				if e != nil {
+					panic(e)
+				}
+
+				fmt.Printf(string(cont))
 			}
 		}
 	}
