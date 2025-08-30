@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -19,10 +20,10 @@ const DKROUTE_ENPOINT string = "https://github.com/u1teriormotives/DevKit/raw/re
 
 func currentTime() string {
 	var now = time.Now()
-	var hours = now.Local().Hour()
-	var minutes = now.Local().Minute()
+	var hours = strconv.Itoa(now.Local().Hour())
+	var minutes = strconv.Itoa((now.Local().Minute()))
 
-	return "\x1b[4;94;40m" + string(rune(hours)) + ":" + string(rune(minutes)) + "\x1b[0m"
+	return "\x1b[4;94;40m" + hours + ":" + minutes + "\x1b[0m"
 }
 
 func getCSharpEndpoints() []string {
@@ -43,19 +44,19 @@ func file(path string, content string, mode os.FileMode) error {
 		return e
 	}
 	defer f.Close()
-	fmt.Println("DEVKIT::"+currentTime()+" Created file @", path)
+	fmt.Println("\x1b[4;94;40mDEVKIT\x1b[0m::"+currentTime()+" Created file @", path)
 
 	_, e = f.WriteString(content)
 	if e != nil {
 		return e
 	}
-	fmt.Println("DEVKIT::"+currentTime()+" Written content to", path)
+	fmt.Println("\x1b[4;94;40mDEVKIT\x1b[0m::"+currentTime()+" Written content to", path)
 
 	e = os.Chmod(path, mode)
 	if e != nil {
 		return e
 	}
-	fmt.Println("DEVKIT::"+currentTime()+" Modified permissions for", path, "to be", mode)
+	fmt.Println("\x1b[4;94;40mDEVKIT\x1b[0m::"+currentTime()+" Modified permissions for", path, "to be", mode)
 
 	return nil
 }
