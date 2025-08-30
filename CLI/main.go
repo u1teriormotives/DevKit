@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 const (
@@ -15,6 +16,14 @@ const (
 
 const ROUTER_JAVASCRIPT_ENDPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/JavaScript/index.js"
 const DKROUTE_ENPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/DKRoute.json"
+
+func currentTime() string {
+	var now = time.Now()
+	var hours = now.Local().Hour()
+	var minutes = now.Local().Minute()
+
+	return "\x1b[4;94;40m" + string(rune(hours)) + ":" + string(rune(minutes)) + "\x1b[0m"
+}
 
 func getCSharpEndpoints() []string {
 	return []string{
@@ -34,19 +43,19 @@ func file(path string, content string, mode os.FileMode) error {
 		return e
 	}
 	defer f.Close()
-	fmt.Println("DEVKIT:: Created file @", path)
+	fmt.Println("DEVKIT::"+currentTime()+" Created file @", path)
 
 	_, e = f.WriteString(content)
 	if e != nil {
 		return e
 	}
-	fmt.Println("DEVKIT:: Written content to", path)
+	fmt.Println("DEVKIT::"+currentTime()+" Written content to", path)
 
 	e = os.Chmod(path, mode)
 	if e != nil {
 		return e
 	}
-	fmt.Println("DEVKIT:: Modified permissions for", path, "to be", mode)
+	fmt.Println("DEVKIT::"+currentTime()+" Modified permissions for", path, "to be", mode)
 
 	return nil
 }
