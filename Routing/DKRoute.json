@@ -1,0 +1,8 @@
+[
+  {
+    "route": "/",
+    "file": "index.html",
+    "type": "html",
+    "requestType": "GET"
+  }
+]
