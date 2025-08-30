@@ -11,12 +11,14 @@ import (
 const ROUTER_JAVASCRIPT_ENDPOINT string = "https://github.com/vadotehla/DevKit/raw/refs/heads/main/Routing/JavaScript/index.js"
 const DKROUTE_ENPOINT string = "https://github.com/vadotehla/DevKit/raw/refs/heads/main/Routing/DKRoute.json"
 
-var ROUTER_CSHARP_ENDPOINT = [5]string{
-	"https://github.com/vadotehla/DevKit/raw/refs/heads/main/Routing/C%23/ProcessHandler.cs",
-	"https://github.com/vadotehla/DevKit/raw/refs/heads/main/Routing/C%23/Program.cs",
-	"https://github.com/vadotehla/DevKit/raw/refs/heads/main/Routing/C%23/appsettings.Development.json",
-	"https://github.com/vadotehla/DevKit/raw/refs/heads/main/Routing/C%23/appsettings.json",
-	"https://github.com/vadotehla/DevKit/raw/refs/heads/main/Routing/C%23/route.csproj",
+func getCSharpEndpoints() []string {
+	return []string{
+		"https://github.com/vadotehla/DevKit/raw/refs/heads/main/Routing/C%23/ProcessHandler.cs",
+		"https://github.com/vadotehla/DevKit/raw/refs/heads/main/Routing/C%23/Program.cs",
+		"https://github.com/vadotehla/DevKit/raw/refs/heads/main/Routing/C%23/appsettings.Development.json",
+		"https://github.com/vadotehla/DevKit/raw/refs/heads/main/Routing/C%23/appsettings.json",
+		"https://github.com/vadotehla/DevKit/raw/refs/heads/main/Routing/C%23/route.csproj",
+	}
 }
 
 func main() {
