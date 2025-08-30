@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DevKit Syntax Markup Editor</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/dracula.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/mode/simple.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #1e1f29;
+        color: #f8f8f2;
+      }
+      .CodeMirror {
+        border: 1px solid #44475a;
+        height: auto;
+        background: #282a36;
+        color: #f8f8f2;
+        padding: 10px;
+        border-radius: 5px;
+      }
+      .cm-custom-tag {
+        color: #8be9fd !important;
+        font-weight: bold;
+      }
+      .cm-custom-attribute {
+        color: #ffb86c !important;
+        font-weight: bold;
+      }
+      .cm-custom-bracket {
+        color: #bd93f9 !important;
+        font-weight: bold;
+      }
+      .cm-custom-string {
+        color: #50fa7b !important;
+        font-weight: bold;
+      }
+      .cm-custom-paren {
+        color: #8be9fd !important;
+        font-weight: bold;
+      }
+      .cm-custom-number {
+        color: #f1fa8c !important;
+        font-weight: bold;
+      }
+      button {
+        background: #ff79c6;
+        border: none;
+        padding: 10px 15px;
+        color: #282a36;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: 5px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2 style="color: #f8f8f2">DevKit Markup Editor</h2>
+    <button onclick="generateIDs()">Regenerate IDs</button>
+    <textarea id="editor">
+[document (t="HTML5")/]
+[html $:htmlTree]
+    [metadata $:head]
+        [meta $:GENERATE_ID]
+            [http-equiv]Content-Type[/http-equiv]
+            [content]text/html;charset=UTF-8[/content]
+        [/meta]
+    [/metadata]
+[/html]</textarea
+    >
+    <script>
+      function generateUniqueID() {
+        return (
+          Math.random().toString(36).substr(2, 10) + Date.now().toString(36)
+        );
+      }
+
+      function generateIDs() {
+        let content = editor.getValue();
+        content = content.replace(/\$:[a-zA-Z0-9_]+/g, (match) => {
+          if (
+            match === "$:head" ||
+            match === "$:body" ||
+            match === "$:htmlTree"
+          ) {
+            return match;
+          }
+          return `$:${generateUniqueID()}`;
+        });
+        editor.setValue(content);
+      }
+
+      CodeMirror.defineSimpleMode("customMarkup", {
+        start: [
+          { regex: /\[/, token: "custom-bracket" },
+          { regex: /\]/, token: "custom-bracket" },
+          { regex: /\[\/?.*?\]/, token: "custom-tag" },
+          { regex: /\$:[a-zA-Z0-9_]+/, token: "custom-attribute" },
+          { regex: /\(.*?\)/, token: "custom-paren" },
+          { regex: /"[^"]*"/, token: "custom-string" },
+          { regex: /\b[0-9]+\b/, token: "custom-number" },
+        ],
+      });
+
+      var editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+        mode: "customMarkup",
+        lineNumbers: true,
+        theme: "dracula",
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,46 @@
+{document (t="HTML5")/}
+[html $:htmlTree]
+    [metadata $:head]
+        [meta $:9l8z931f9388fWV6]
+            [http-equiv]
+                Content-Type
+            [/http-equiv]
+            [content]
+                text/html;charset=UTF-8
+            [/content]
+        [/meta]
+        [meta $:0G1J151he4503R7m]
+            [name]
+                viewport
+            [/name]
+            [content]
+                width=device-width,
+                initial-scale=1.0
+            [/content]
+        [/meta]
+        [meta $:8po97712p6226953]
+            [http-equiv]
+                X-UA-Compatible
+            [/http-equiv]
+            [content]
+                ie=edge
+            [/content]
+        [/meta]
+        [title $:title]
+            Test
+        [/title]
+    [/metadata]
+    [body $:body]
+        [elem:header $:8lB6TX1Q74xI9v58]
+            [field:id]head[/field:id]
+            [elem:h1 $:7Sp6mOn1ch2dK6C1]
+                [textContent]Hello\comma there\exclamationPoint[/textContent]
+            [/elem:h1]
+        [/elem:header]
+        [elem:section $:v9kW8H5757a2KgiS]
+            [elem:p $:P98l6Sb3iwL5j4Bc]
+                [textContent]This is a test\exclamationPoint[/textContent]
+            [/elem:p]
+        [/elem:section]
+    [/body]
+[/html]

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+case "$1" in
+-c)
+    touch DKRoute.json
+    echo "[]" >DKRoute.json
+    ;;
+esac

@@ -1,0 +1,28 @@
+{
+  "name": "@devkit-http/traffic-router",
+  "version": "1.0.8",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "HTTP Server",
+    "webtraffic routing",
+    "DevKit"
+  ],
+  "author": "u1terior",
+  "license": "GPL-3.0-only",
+  "description": "",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  },
+  "readme": "README.md",
+  "bugs": {
+    "url": "https://github.com/u1t-dev/DevKit/issues"
+  },
+  "bin": {
+    "traffic-router": "index.js"
+  }
+}
