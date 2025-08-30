@@ -8,6 +8,11 @@ import (
 	"path/filepath"
 )
 
+const (
+	RWE os.FileMode = 0644
+	RW  os.FileMode = 0755
+)
+
 const ROUTER_JAVASCRIPT_ENDPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/JavaScript/index.js"
 const DKROUTE_ENPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/DKRoute.json"
 
@@ -22,6 +27,29 @@ func getCSharpEndpoints() []string {
 }
 
 var CSHARP_ENDPOINTS []string = getCSharpEndpoints()
+
+func file(path string, content string, mode os.FileMode) error {
+	f, e := os.Create(path)
+	if e != nil {
+		return e
+	}
+	defer f.Close()
+	fmt.Println("DEVKIT:: Created file @", path)
+
+	_, e = f.WriteString(content)
+	if e != nil {
+		return e
+	}
+	fmt.Println("DEVKIT:: Written content to", path)
+
+	e = os.Chmod(path, mode)
+	if e != nil {
+		return e
+	}
+	fmt.Println("DEVKIT:: Modified permissions for", path, "to be", mode)
+
+	return nil
+}
 
 func main() {
 	argc := len(os.Args) - 1
@@ -54,23 +82,10 @@ func main() {
 					panic(e)
 				}
 				var routePath string = filepath.Join(dir, "route.js")
-				f, e := os.Create(routePath)
+				e = file(routePath, string(body), RWE)
 				if e != nil {
 					panic(e)
 				}
-				defer f.Close()
-
-				_, e = f.WriteString(string(body))
-				if e != nil {
-					panic(e)
-				}
-				fmt.Println("Written JavaScript router to", routePath)
-
-				e = os.Chmod(routePath, 0755)
-				if e != nil {
-					panic(e)
-				}
-				fmt.Println("Modified", routePath, "to allow for manual execution via the command line!")
 			}
 			{
 				res, e := http.Get(DKROUTE_ENPOINT)
@@ -85,17 +100,10 @@ func main() {
 				}
 
 				var dkRoutePath string = filepath.Join(dir, "DKRoute.json")
-				f, e := os.Create(dkRoutePath)
+				e = file(dkRoutePath, string(body), RW)
 				if e != nil {
 					panic(e)
 				}
-				defer f.Close()
-
-				_, e = f.WriteString(string(body))
-				if e != nil {
-					panic(e)
-				}
-				fmt.Println("Written DKRoute.json example to", dkRoutePath)
 			}
 		}
 	}
