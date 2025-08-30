@@ -68,6 +68,31 @@ func main() {
 				}
 				fmt.Println("Modified", routePath, "to allow for manual execution via the command line!")
 			}
+			{
+				res, e := http.Get(DKROUTE_ENPOINT)
+				if e != nil {
+					panic(e)
+				}
+				defer res.Body.Close()
+
+				body, e := ioutil.ReadAll(res.Body)
+				if e != nil {
+					panic(e)
+				}
+
+				var dkRoutePath string = filepath.Join(dir, "DKRoute.json")
+				f, e := os.Create(dkRoutePath)
+				if e != nil {
+					panic(e)
+				}
+				defer f.Close()
+
+				_, e = f.WriteString(string(body))
+				if e != nil {
+					panic(e)
+				}
+				fmt.Println("Written DKRoute.json example to", dkRoutePath)
+			}
 		}
 	}
 }
