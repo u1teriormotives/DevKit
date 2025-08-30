@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,6 +19,11 @@ const (
 	RWE os.FileMode = 0644
 	RW  os.FileMode = 0755
 )
+
+type RouteConfig struct {
+	Route    string `json:"router"`
+	FilePath string `json:"mainFilePath"`
+}
 
 const ROUTER_JAVASCRIPT_ENDPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/JavaScript/index.js"
 const DKROUTE_ENPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/DKRoute.json"
@@ -221,12 +227,36 @@ func main() {
 		if secondaryCommand == "router" {
 			_, e := os.Stat(filepath.Join(dir, ".dk", "route-config.json"))
 			if e == nil {
-				cont, e := os.ReadFile(filepath.Join(dir, ".dk", "route-config.json"))
-				if e != nil {
-					panic(e)
+				cont, err := os.ReadFile(filepath.Join(dir, ".dk", "route-config.json"))
+				if err != nil {
+					panic(err)
 				}
 
-				fmt.Printf(string(cont))
+				var content RouteConfig
+				_ = json.Unmarshal(cont, &content)
+
+				switch content.Route {
+				case "javascript":
+					{
+						cmd := exec.Command("node", content.Route)
+						out, e := cmd.CombinedOutput()
+						if e != nil {
+							panic(e)
+						}
+						fmt.Println(string(out))
+					}
+				case "c-sharp":
+					{
+						cmd := exec.Command("dotnet", "run")
+						out, e := cmd.CombinedOutput()
+						if e != nil {
+							panic(e)
+						}
+						fmt.Println(string(out))
+					}
+				}
+			} else {
+				panic(e)
 			}
 		}
 	}
