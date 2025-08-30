@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+var BINARY_LOCATION = os.Args[0]
+
 const (
 	RWE os.FileMode = 0644
 	RW  os.FileMode = 0755
