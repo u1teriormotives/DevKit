@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -79,50 +80,79 @@ func main() {
 	mainCommand := argv[0]
 	if mainCommand == "route" || mainCommand == "router" {
 		routeType := argv[1]
-		if routeType == "js" || routeType == "javascript" {
-			fmt.Println("Making files...")
+		switch routeType {
+		case "js", "javascript":
 			{
-				res, e := http.Get(ROUTER_JAVASCRIPT_ENDPOINT)
-				if e != nil {
-					panic(e)
-				}
-				defer res.Body.Close()
+				fmt.Println("Making files...")
+				{
+					res, e := http.Get(ROUTER_JAVASCRIPT_ENDPOINT)
+					if e != nil {
+						panic(e)
+					}
+					defer res.Body.Close()
 
-				body, e := io.ReadAll(res.Body)
+					body, e := io.ReadAll(res.Body)
+					if e != nil {
+						panic(e)
+					}
+					var routePath string = filepath.Join(dir, "route.js")
+					e = file(routePath, string(body), RWE)
+					if e != nil {
+						panic(e)
+					}
+				}
+				{
+					res, e := http.Get(DKROUTE_ENPOINT)
+					if e != nil {
+						panic(e)
+					}
+					defer res.Body.Close()
+
+					body, e := io.ReadAll(res.Body)
+					if e != nil {
+						panic(e)
+					}
+
+					var dkRoutePath string = filepath.Join(dir, "DKRoute.json")
+					e = file(dkRoutePath, string(body), RW)
+					if e != nil {
+						panic(e)
+					}
+				}
+				fmt.Println("Running \x1b[97mnpm i express\x1b[0m")
+				cmd := exec.Command("npm", "i", "express")
+				out, e := cmd.CombinedOutput()
 				if e != nil {
 					panic(e)
 				}
-				var routePath string = filepath.Join(dir, "route.js")
-				e = file(routePath, string(body), RWE)
-				if e != nil {
-					panic(e)
-				}
+				fmt.Println("Output from npm:", string(out))
 			}
+		case "c#", "c-sharp", "csharp":
 			{
-				res, e := http.Get(DKROUTE_ENPOINT)
-				if e != nil {
-					panic(e)
-				}
-				defer res.Body.Close()
+				fmt.Println("Making files...")
+				for i := 0; i < len(CSHARP_ENDPOINTS); i++ {
+					var endpoint string = CSHARP_ENDPOINTS[i]
+					res, e := http.Get(endpoint)
+					if e != nil {
+						panic(e)
+					}
+					defer res.Body.Close()
 
-				body, e := io.ReadAll(res.Body)
-				if e != nil {
-					panic(e)
-				}
+					body, e := io.ReadAll(res.Body)
+					if e != nil {
+						panic(e)
+					}
 
-				var dkRoutePath string = filepath.Join(dir, "DKRoute.json")
-				e = file(dkRoutePath, string(body), RW)
-				if e != nil {
-					panic(e)
+					var fileSplit = strings.Split(endpoint, "/")
+					var fileName = fileSplit[len(fileSplit)-1]
+					var filePath = filepath.Join(dir, fileName)
+
+					e = file(filePath, string(body), RW)
+					if e != nil {
+						panic(e)
+					}
 				}
 			}
-			fmt.Println("Running \x1b[97mnpm i express\x1b[0m")
-			cmd := exec.Command("npm", "i", "express")
-			out, e := cmd.CombinedOutput()
-			if e != nil {
-				panic(e)
-			}
-			fmt.Println("Output from npm:", string(out))
 		}
 	}
 }
