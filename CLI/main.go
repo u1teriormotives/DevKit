@@ -63,11 +63,30 @@ func file(path string, content string, mode os.FileMode) error {
 	return nil
 }
 
+func currentDirectory() (string, error) {
+	dir, e := os.Getwd()
+	return dir, e
+}
+
+func directory() error {
+	dir, e := currentDirectory()
+	if e != nil {
+		return e
+	}
+	e = os.Mkdir(filepath.Join(dir, ".dk"), RW)
+
+	if e != nil {
+		return e
+	}
+
+	return nil
+}
+
 func main() {
 	argc := len(os.Args) - 1
 	argv := make([]string, argc)
 
-	dir, e := os.Getwd()
+	dir, e := currentDirectory()
 	if e != nil {
 		panic(e)
 	}
@@ -126,6 +145,19 @@ func main() {
 					panic(e)
 				}
 				fmt.Println("Output from npm:", string(out))
+
+				e = directory()
+				if e != nil {
+					panic(e)
+				}
+				const cont string = `{
+  "router": "javascript",
+  "mainFilePath": "%s"
+}`
+				e = file(filepath.Join(dir, ".dk", "route-config.json"), fmt.Sprintf(cont, filepath.Join(dir, "route.js")), RW)
+				if e != nil {
+					panic(e)
+				}
 			}
 		case "c#", "c-sharp", "csharp":
 			{
@@ -151,6 +183,33 @@ func main() {
 					if e != nil {
 						panic(e)
 					}
+				}
+				var path string = filepath.Join(dir, "DKRoute.json")
+				res, e := http.Get(DKROUTE_ENPOINT)
+				if e != nil {
+					panic(e)
+				}
+				defer res.Body.Close()
+				body, e := io.ReadAll(res.Body)
+				if e != nil {
+					panic(e)
+				}
+				e = file(path, string(body), RW)
+				if e != nil {
+					panic(e)
+				}
+
+				e = directory()
+				if e != nil {
+					panic(e)
+				}
+				const cont string = `{
+  "router": "javascript",
+  "mainFilePath": "%s"
+}`
+				e = file(filepath.Join(dir, ".dk", "route-config.json"), fmt.Sprintf(cont, filepath.Join(dir, "Program.cs")), RW)
+				if e != nil {
+					panic(e)
 				}
 			}
 		}
