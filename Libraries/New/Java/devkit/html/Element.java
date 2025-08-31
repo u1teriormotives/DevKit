@@ -5,6 +5,9 @@ import java.util.*;
 public class Element {
     private String textContent = null;
     private ArrayList<Element> children = null;
+    private Map<String, String> attributes = null;
+
+    public final String elemType = "";
 
     public Element() {
         this.appendChild(new TextNode(""));
@@ -34,5 +37,11 @@ public class Element {
     }
     public String textContent() {
         return this.textContent;
+    }
+    public Map<String, String> getAttributes() {
+        return this.attributes;
+    }
+    public void setAttribute(String name, String value) {
+        this.attributes.put(name, value);
     }
 }
