@@ -25,6 +25,9 @@ type RouteConfig struct {
 	FilePath string `json:"mainFilePath"`
 }
 
+const ROUTER_JAVASCRIPT_ENDPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/JavaScript/index.js"
+const DKROUTE_ENPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/DKRoute.json"
+
 func currentDirectory() (string, error) {
 	dir, e := os.Getwd()
 	return dir, e
@@ -57,9 +60,11 @@ func fetch(ctx context.Context, url string) ([]byte, error) {
 	}
 
 	res, e := client.Do(req)
+	fmt.Println(currentTime()+" -> attempting request @", url)
 	if e != nil {
 		return nil, fmt.Errorf(currentTime()+" -> request failed: %w", e)
 	}
+	fmt.Println(currentTime()+" -> requested resource @", url, "has returned")
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
@@ -100,19 +105,19 @@ func file(path string, content string, mode os.FileMode) error {
 		return e
 	}
 	defer f.Close()
-	fmt.Println(currentTime()+" Created file @", path)
+	fmt.Println(currentTime()+" -> created file @", path)
 
 	_, e = f.WriteString(content)
 	if e != nil {
 		return e
 	}
-	fmt.Println(currentTime()+" Written content to", path)
+	fmt.Println(currentTime()+" -> written content to", path)
 
 	e = os.Chmod(path, mode)
 	if e != nil {
 		return e
 	}
-	fmt.Println(currentTime()+" Modified permissions for", path, "to be", mode)
+	fmt.Println(currentTime()+" -> modified permissions for", path, "to be", mode)
 
 	return nil
 }
@@ -127,13 +132,39 @@ var (
 var fetchCommand = &cobra.Command{
 	Use:   "fetch",
 	Short: "fetch a package from DevKit",
+}
+var routeFetch = &cobra.Command{
+	Use:   "route",
+	Short: "fetch a router",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(currentTime()+" -> router version selected:", routerVersion)
+		switch routerVersion {
+		case "javascript", "js":
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			body, e := fetch(ctx, ROUTER_JAVASCRIPT_ENDPOINT)
+			if e != nil {
+				panic(e)
+			}
+			dir, e := currentDirectory()
+			if e != nil {
+				panic(e)
+			}
+
+			content := string(body)
+
+			path := filepath.Join(dir, "route.js")
+			e = file(path, content, RWE)
+			if e != nil {
+				panic(e)
+			}
+		}
 	},
 }
 
 func init() {
-	fetchCommand.Flags().StringVarP(&routerVersion, "router", "r", "javascript", "the router version to install")
+	routeFetch.Flags().StringVarP(&routerVersion, "router", "r", "javascript", "the router version to install")
+	fetchCommand.AddCommand(routeFetch)
 	root.AddCommand(fetchCommand)
 }
 
