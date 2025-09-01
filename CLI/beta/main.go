@@ -19,6 +19,9 @@ const (
 	RWE os.FileMode = 0644
 	RW  os.FileMode = 0755
 )
+const (
+	DKPM_VERSION string = "v0.1.0-beta"
+)
 
 type RouteConfig struct {
 	Route    string `json:"router"`
@@ -184,8 +187,18 @@ func dkRouteFile() error {
 	}
 }
 
+var (
+	flag_Version bool
+)
+
 var root = &cobra.Command{
-	Use: "dkpm",
+	Use:   "dkpm",
+	Short: "the devkit package manager",
+	Run: func(cmd *cobra.Command, args []string) {
+		if flag_Version {
+			fmt.Println(currentTime()+" -> dkpm version:", string(DKPM_VERSION))
+		}
+	},
 }
 
 var (
@@ -275,6 +288,7 @@ func init() {
 	makeDKRouteFileCommand.Flags().StringVarP(&filePath_DKROUTE, "path", "p", "DKRoute.json", "where the file should be")
 	makeFileCommand.AddCommand(makeDKRouteFileCommand)
 	fetchCommand.AddCommand(routeFetch)
+	root.Flags().BoolVarP(&flag_Version, "version", "v", false, "prints the current version of the CLI")
 	root.AddCommand(makeFileCommand)
 	root.AddCommand(fetchCommand)
 }
