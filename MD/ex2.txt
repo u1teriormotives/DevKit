@@ -1,0 +1,62 @@
+{DOCUMENT t="dk"/}
+[document $:tree]
+    [head $:head]
+        [meta $:BiU5549106oP1t14]
+            (http-equiv="Content-Type" /)
+            (content="text/dk; charset=UTF-8" /)
+        [/meta $:BiU5549106oP1t14]
+        [meta $:pQw15j9907f52W76]
+            (name="viewport" /)
+            (content="width=device-width, initial-scale=1.0" /)
+        [/meta $:pQw15j9907f52W76]
+
+        [title $:title]
+            Example WebPage
+        [/title $:title]
+
+        [external-source $:9N5K14Oji4TYEA34]
+            (type="stylesheet" /)
+            (source-url="main.css" /)
+        [/external-source $:9N5K14Oji4TYEA34]
+        [internal-source $:9d4WH18qz13DKH46]
+            (type="stylesheet" /)
+            (content-type="dks" /)
+            ===BEGIN-TEXT-CONTENT===
+             [selector::classification("page-header")] -> {
+                set(background-color): hexadecimal_value(#ffffff);
+                set(margin): 5px 5px 5px 5px;
+                set(position): fixed;
+             }
+             [selector::internal-id("body")] -> {
+                set(margin, padding): 0 0 0 0;
+                set(height): |viewport.height|;
+                set(width):  |viewport.width|;
+             }
+             ===END-TEXT-CONTENT===
+        [/internal-source $:9d4WH18qz13DKH46]
+    [/head $:head]
+    [body $:body]
+        [element::divider $:5J90g0240Mcoi4BK]
+            (user-agent-classification="header" /)
+            (set-classification="page-header" /)
+            [element::heading $:31JIw693kT7YG174]
+                (user-agent-classification="h1" /)
+                (id="main-heading" /)
+                ===BEGIN-TEXT-CONTENT===
+                My New Book
+                 ===END-TEXT-CONTENT===
+            [/heading $:31JIw693kT7YG174]
+        [/divider $:5J90g0240Mcoi4BK]
+        [element::paragraph $:H4z8hp2z5796X860]
+            (user-agent-classification="p" /)
+            (set-classification="example" /)
+            [[inline-styling] -> {
+                font-family: "Computer Modern", "Times New Roman", system-ui, serif;
+                text-color:  hexadecimal_value(#000000);
+            } /]
+            ===BEGIN-TEXT-CONTENT===
+            The moon loomed high \elipses
+             ===END-TEXT-CONTENT===
+        [/paragraph $:H4z8hp2z5796X860]
+    [/body $:body]
+[/document $:tree]
