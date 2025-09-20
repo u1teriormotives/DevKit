@@ -203,17 +203,3 @@ private:
         return s.substr(start, end - start + 1);
     }
 };
-
-
-int main() {
-    std::ifstream file("../ex2.txt");
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-
-    DKParser parser(buffer.str());
-    auto tree = parser.parse();
-
-    for (auto &node : tree) {
-        std::cout << node->pretty() << "\n";
-    }
-}
