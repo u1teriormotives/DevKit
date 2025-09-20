@@ -1,11 +1,11 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <map>
-#include <regex>
-#include <memory>
 
 struct Node {
     std::string tag;
