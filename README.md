@@ -18,7 +18,7 @@ DevKit is an HTTP rendering engine that allows for websites to be written & code
 - Go
 - Kotlin
 - Dart
-- and many others that are planned to be supported
+- and many others are planned to be supported
 
 After having learned of the horror that is React (& other frameworks like it),
 I conceived the idea of DevKit as a way to simplify the uselessness of a "virtual DOM"
