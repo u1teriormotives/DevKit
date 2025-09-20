@@ -71,7 +71,7 @@ class DKParser {
 public:
     explicit DKParser(const std::string &text) : text(text) {}
 
-    std::vector<std::shared_ptr<Node>> parse() {
+    std::vector<std::shared_ptr<Node>> parse() const {
         return parse_block(text);
     }
 
@@ -86,7 +86,7 @@ private:
     const std::regex INLINE{R"(\[\[([a-z0-9:\-]+)\]\s*->\s*\{([\s\S]*?)\}\s*\/\])", std::regex::icase};
     const std::regex CONTENT_BLOCK{R"(===BEGIN-TEXT-CONTENT===([\s\S]*?)===END-TEXT-CONTENT===)"};
 
-    std::vector<std::shared_ptr<Node>> parse_block(const std::string &block) {
+    std::vector<std::shared_ptr<Node>> parse_block(const std::string &block) const {
         std::vector<std::shared_ptr<Node>> nodes;
         std::vector<std::shared_ptr<Node>> stack;
 
@@ -185,7 +185,7 @@ private:
         return nodes;
     }
 
-    std::map<std::string, std::string> collect_attrs(const std::string &s) {
+    std::map<std::string, std::string> collect_attrs(const std::string &s) const {
         std::map<std::string, std::string> attrs;
         std::smatch m;
         std::string tmp = s;
