@@ -52,6 +52,9 @@ func currentTime() string {
 	var now = time.Now()
 	var hours = strconv.Itoa(now.Local().Hour())
 	var minutes = strconv.Itoa((now.Local().Minute()))
+	if now.Local().Minute() < 10 {
+		minutes = "0" + minutes
+	}
 
 	return "\x1b[4;94;40mDEVKIT\x1b[0m::\x1b[4;94;40m" + hours + ":" + minutes + "\x1b[0m"
 }
