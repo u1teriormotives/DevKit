@@ -283,3 +283,8 @@ server.listen(port, "0.0.0.0", () =>
     }://localhost:${port}`
   )
 );
+
+process.on("SIGINT", () => {
+  server.close();
+  process.exit(0);
+});
