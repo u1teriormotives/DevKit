@@ -1,5 +1,5 @@
 # DevKit
-An HTTP rendering engine with a twist
+A WebGPU-Based Schema Webpage Renderer with a Twist
 
 ---
 
