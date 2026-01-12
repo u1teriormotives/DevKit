@@ -1,8 +1,23 @@
-[
-  {
-    "route": "/",
-    "file": "index.html",
-    "type": "html",
-    "requestType": "GET"
-  }
-]
+{
+  "$": {
+    "useHttps": false,
+    "httpsConfig": {
+      "key": "relative_path.key",
+      "cert": "relative_path.crt"
+    },
+    "port": 8080
+  },
+  "/": [
+    {
+      "requestType": "GET",
+      "file": "index.html",
+      "contentType": "html",
+      "externalFunction": false
+    },
+    {
+      "requestType": "POST",
+      "file": "test.js",
+      "externalFunction": true
+    }
+  ]
+}
