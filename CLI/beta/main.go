@@ -175,14 +175,12 @@ func dkRouteFile() error {
 		return e
 	}
 
-	var DKRoutePresetData string = `[
-  {
-    "route": "/",
-    "file": "index.html",
-    "type": "html",
-    "requestType": "GET"
-  }
-]`
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	body, e := fetch(ctx, DKROUTE_ENPOINT)
+	DKRoutePresetData := string(body)
+
 	e = file(filepath.Join(dir, filePath_DKROUTE), DKRoutePresetData, RW)
 	if e != nil {
 		return e
