@@ -30,7 +30,7 @@ type RouteConfig struct {
 
 const ROUTER_JAVASCRIPT_ENDPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/JavaScript/index.js"
 const DKROUTE_ENPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/DKRoute.json"
-const DEFAULT_INDEX_FILE string = "sds"
+const DEFAULT_INDEX_FILE string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/generic_index.html"
 
 func getCSharpEndpoints() []string {
 	return []string{
