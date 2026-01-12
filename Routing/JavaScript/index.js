@@ -1,36 +1,38 @@
 #!/usr/bin/env node
 
-import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
-
+import { randomUUID } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
+import fs from "node:fs/promises";
+import http from "node:http";
+import https from "node:https";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
-
-import express from "express";
-import "dotenv/config";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
+const __DKROUTE_PATH = path.join(__dirname, "DKRoute.json");
 
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.use((req, res, next) => {
-  console.log(`🛠 Middleware detected: ${req.method} ${req.url}`);
-  req.isDevKitRequest = req.headers["user-agent"]?.includes("DevKit") || false;
-  next();
-});
-
-const isValidJSON = (text) => {
-  try {
-    JSON.parse(text);
-    return true;
-  } catch (error) {
-    return false;
-  }
+const currentTime = () => {
+  const now = new Date();
+  const hours =
+    now.getHours() < 10 ? `0${now.getHours()}` : `${now.getHours()}`;
+  const minutes =
+    now.getMinutes() < 10 ? `0${now.getMinutes()}` : `${now.getMinutes()}`;
+  return `\x1b[4;94;40mDEVKIT\x1b[0m::\x1b[4;94;40m${hours}:${minutes}\x1b[0m`;
 };
-const verbs = new Set([
+const fatalException = () =>
+  console.error(`${currentTime()} :: \x1b[41mFATAL EXCEPTION\x1b[0m`);
+const nonfatalException = () =>
+  console.error(`${currentTime()} :: \x1b[44mNONFATAL EXCEPTION\x1b[0m`);
+
+if (!existsSync(__DKROUTE_PATH)) {
+  fatalException();
+  throw new Error(
+    `Expected DKRoute.json at ${__DKROUTE_PATH}, file does not exist.`
+  );
+}
+
+const validVerbs = new Set([
   "get",
   "post",
   "put",
@@ -41,115 +43,243 @@ const verbs = new Set([
   "connect",
   "trace",
 ]);
-const isValidHTTPVerb = (verb) => verbs.has(verb);
-const basicWASMlangs = new Set(["js", "javascript", "html", "css"]);
-const basicWASMMIMEs = new Map(
-  Object.entries({
-    js: "text/javascript",
-    javascript: "text/javascript",
-    html: "text/html",
-    css: "text/css",
-  })
-);
-const getBasicMIME = (type) => basicWASMMIMEs.get(type) || "text/plain";
-const isValidBaseWASM = (type) => basicWASMlangs.has(type.toLowerCase());
-
-const setupRoute = (obj, func) => {
-  const reqType = obj.requestType?.toLowerCase();
-  console.log(`🔹 Setting up route: ${obj.route} [${reqType}]`);
-
-  app[reqType](obj.route, async (req, res) => {
-    console.log(`📥 Incoming ${req.method} request: ${req.url}`);
-
-    if (func && typeof func === "function") {
-      console.log(`🔧 Custom handler for ${obj.route}`);
-      return func(req, res);
-    }
-
-    let ret =
-      "This content cannot be displayed as you do not have the necessary";
-    if (isValidBaseWASM(obj.type)) {
-      console.log(`📖 Reading file: ${obj.file}`);
-      try {
-        ret = await readFile(join(__dirname, obj.file), "utf8");
-      } catch (error) {
-        console.error(`🚨 Error reading file ${obj.file}:`, error.message);
-        return res
-          .status(500)
-          .send("🚨 Internal Server Error: File not found!");
-      }
-    }
-
-    console.log("📤 Sending response...");
-    res
-      .status(200)
-      .set(
-        "Content-Type",
-        isValidBaseWASM(obj.type) ? getBasicMIME(obj.type) : "text/plain"
-      )
-      .send(ret);
-  });
+const MIME = new Map();
+MIME.set("html", "text/html");
+MIME.set("js", "text/javascript");
+MIME.set("json", "application/json");
+MIME.set("css", "text/css");
+let useHttps = false;
+const httpsOptions = {
+  cert: "",
+  key: "",
 };
 
-(async () => {
-  const dkRoutePath = join(__dirname, "DKRoute.json");
-  if (!existsSync(dkRoutePath)) throw new Error("❌ DKRoute file not found!");
+const __DKROUTE_DATA_RAW = (await fs.readFile(__DKROUTE_PATH, "utf8")).trim();
+if (!__DKROUTE_DATA_RAW) {
+  fatalException();
+  throw new Error(`No data exists in DKRoute.json (found @ ${__DKROUTE_PATH})`);
+}
 
-  const rawData = await readFile(dkRoutePath, "utf8");
-  if (!isValidJSON(rawData)) throw new Error("❌ Invalid DKRoute JSON!");
+const __DKROUTE_DATA = JSON.parse(__DKROUTE_DATA_RAW);
+const __DKROUTE_METADATA = __DKROUTE_DATA["$"] ?? null;
+if (!__DKROUTE_METADATA) {
+  fatalException();
+  throw new Error(
+    `No metadata found in DKRoute.json (found @ ${__DKROUTE_PATH})`
+  );
+}
+if (!__DKROUTE_METADATA.port) {
+  fatalException();
+  throw new Error(`No port found in DKRoute.json (found @ ${__DKROUTE_PATH})`);
+}
+const port = __DKROUTE_METADATA.port;
+if (typeof port !== "number" || port > 65535 || port < 0) {
+  fatalException();
+  throw new Error(`Port provided (${port}) invalid`);
+}
 
-  const json = JSON.parse(rawData);
-  if (Array.isArray(json)) {
-    for (const obj of json) {
-      if (
-        obj.func &&
-        typeof obj.func === "string" &&
-        existsSync(join(__dirname, obj.func))
-      ) {
-        try {
-          const func = await import(join(__dirname, obj.func));
-          setupRoute(obj, func.default);
-        } catch (error) {
-          console.error(
-            `❌ Error loading function for ${obj.route}: ${error.message}`
-          );
-          setupRoute(obj);
-        }
-      } else {
-        setupRoute(obj);
-      }
-    }
-  } else {
-    if (
-      json.func &&
-      typeof json.func === "string" &&
-      existsSync(join(__dirname, json.func))
-    ) {
-      try {
-        const func = await import(join(__dirname, json.func));
-        setupRoute(json, func.default);
-      } catch (error) {
-        console.error(
-          `❌ Error loading function for ${json.route}: ${error.message}`
-        );
-        setupRoute(json);
-      }
-    } else {
-      setupRoute(json);
-    }
+if (__DKROUTE_METADATA.useHttps) {
+  useHttps = true;
+  if (
+    !__DKROUTE_METADATA.httpsConfig ||
+    !__DKROUTE_METADATA.httpsConfig.cert ||
+    !__DKROUTE_METADATA.httpsConfig.key
+  ) {
+    fatalException();
+    throw new Error(
+      `HTTPS Config malformed or does not exist (found @ ${__DKROUTE_PATH})`
+    );
   }
 
-  app.get("/test", (req, res) => {
-    console.log("📥 Test route reached!");
-    res.send("✅ Test route is working!");
-  });
+  httpsOptions["cert"] = readFileSync(
+    path.join(__dirname, __DKROUTE_METADATA.httpsConfig.cert)
+  );
+  httpsOptions["key"] = readFileSync(
+    path.join(__dirname, __DKROUTE_METADATA.httpsConfig.key)
+  );
+}
 
-  const PORT = process.env.PORT || 80;
-  app.listen(PORT, () => {
-    console.log(`🚀 DevKit Server running on port ${PORT}`);
-    console.log(
-      "🔍 Registered routes:",
-      app._router.stack.map((r) => r.route?.path).filter(Boolean)
+const validRoutes = new Map();
+const inputRoutes = Object.keys(__DKROUTE_DATA).filter((v) =>
+  v.startsWith("/")
+);
+
+for (const route of inputRoutes) {
+  if (!Array.isArray(__DKROUTE_DATA[route])) {
+    nonfatalException();
+    console.error(
+      `Route ${route} has invalid schema: ${typeof __DKROUTE_DATA[
+        route
+      ]} invalid type; looking for Array<Object>. Continuing...`
     );
-  });
-})();
+    continue;
+  }
+  for (const method of __DKROUTE_DATA[route]) {
+    const verb = method.requestType;
+    if (
+      !verb ||
+      typeof verb !== "string" ||
+      !validVerbs.has(verb.toLowerCase())
+    ) {
+      nonfatalException();
+      console.error(`${verb} ${route} has invalid requestType. Continuing...`);
+      continue;
+    }
+
+    const file = method.file;
+    if (
+      !file ||
+      typeof file !== "string" ||
+      !existsSync(path.join(__dirname, file))
+    ) {
+      nonfatalException();
+      console.error(
+        `${verb} ${route} has invalid file configuration. Continuing...`
+      );
+      continue;
+    }
+
+    if (method.externalFunction) {
+      let func = await import(path.join(__dirname, file));
+      if (typeof func.default !== "function") {
+        nonfatalException();
+        console.error(
+          `${verb} ${route} has invalid external function in ${file}. Continuing...`
+        );
+        func = null;
+        continue;
+      }
+      validRoutes.set(`${verb.toUpperCase()} ${route}`, {
+        external: true,
+        func: func.default,
+      });
+      continue;
+    } else {
+      validRoutes.set(`${verb.toUpperCase()} ${route}`, {
+        external: false,
+        file: path.join(__dirname, file),
+        fileType: method.contentType ?? "txt",
+      });
+      continue;
+    }
+  }
+}
+
+const routes = new Set();
+validRoutes.forEach((v, k) => routes.add(k.split(" ", 2)[1]));
+
+let server;
+if (useHttps) server = https.createServer(httpsOptions);
+else server = http.createServer();
+
+server.on("request", async (req, res) => {
+  const requestId = randomUUID();
+  console.log(
+    `${currentTime()} :: New request detected: ${req.method ?? "REQUEST"} ${
+      req.url ?? "nil"
+    } - assigned RequestID:${requestId}`
+  );
+  const url = new URL(
+    `http${useHttps ? "s" : ""}://${process.env.HOST ?? "localhost"}${req.url}`
+  );
+
+  const pathname = url.pathname;
+  if (!routes.has(pathname)) {
+    res.writeHead(404, { "content-type": req.headers.accept ?? "text/plain" });
+    console.log(
+      `${currentTime()} :: RequestID:${requestId} - invalid resource request (returning 404)`
+    );
+    return res.end(`ERROR 404 ${req.method} ${pathname} not valid resource`);
+  }
+  if (
+    !req.method ||
+    !validRoutes.has(`${req.method?.toUpperCase()} ${pathname}`)
+  ) {
+    res.writeHead(405, { "content-type": req.headers.accept ?? "text/plain" });
+    console.log(
+      `${currentTime()} :: RequestID::${requestId} - invalid HTTP method (returing 405)`
+    );
+    return res.end(
+      `ERROR 405 ${req.method ?? "REQUEST"} ${pathname} uses incorrect method`
+    );
+  }
+
+  const data = validRoutes.get(`${req.method.toUpperCase()} ${pathname}`);
+  if (!data) {
+    res.writeHead(500, { "content-type": "application/json" });
+    res.write(
+      JSON.stringify({
+        error: 500,
+        response: "error while retrieving data; try again later",
+      })
+    );
+    nonfatalException();
+    console.error(
+      `RequestID:${requestId} - unknown error while retrieving data (returing 500)`
+    );
+    console.error(
+      `RequestID:${requestId} - could be that key was removed after .has() check`
+    );
+    return res.end();
+  }
+
+  if (!data.external) {
+    try {
+      const fileContent = await fs.readFile(data.file, "utf8");
+      const ftype = data.fileType;
+
+      res.writeHead(200, {
+        "content-type": MIME.has(ftype) ? MIME.get(ftype) : "text/plain",
+      });
+      res.write(fileContent);
+      console.log(
+        `${currentTime()} :: RequestID:${requestId} - successful (returing 200)`
+      );
+      return res.end();
+    } catch (error) {
+      nonfatalException();
+      console.error(`RequestID:${requestId} - ${error}`);
+      console.log(`RequestID:${requestId} - returning 500`);
+
+      res.writeHead(500, {
+        "content-type": "text/plain",
+      });
+      return res.end("500 error retrieving file content");
+    }
+  } else {
+    const func = data.func;
+    const [statusCode, headers, content] = func(req);
+    if (
+      !statusCode ||
+      !headers ||
+      !content ||
+      typeof statusCode !== "number" ||
+      !(headers instanceof Object) ||
+      typeof content !== "string"
+    ) {
+      res.writeHead(500, { "content-type": "text/plain" });
+      res.write("500 invalid return schema");
+
+      nonfatalException();
+      console.error(
+        `RequestID:${requestId} - invalid return schema for resource ${pathname} (returning 500)`
+      );
+      return res.end();
+    }
+
+    res.writeHead(statusCode, headers);
+    res.write(content);
+    console.log(
+      `${currentTime()} :: RequestID:${requestId} - successful (returing 200)`
+    );
+    return res.end();
+  }
+});
+
+server.listen(port, "0.0.0.0", () =>
+  console.log(
+    `${currentTime()} :: listening at ${
+      useHttps ? "https" : "http"
+    }://localhost:${port}`
+  )
+);

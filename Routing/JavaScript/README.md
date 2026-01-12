@@ -1,32 +1,34 @@
 # How to use DevKit Routing:
-- Make a file called `DKRoute` in the directory you want to use
+- Make a file called `DKRoute.json` in the directory you want to use (or use `dkpm make dkroute` if installed)
 - Format:
 ```jsonc
 // this is an example
-[
-  {
-    "route": "/",
-    "file": "index.html",
-    "type": "html",
-    "requestType": "GET"
+{
+  "$": { // metadata
+    "useHttps": false, // controls if https is used
+    "httpsConfig": {
+      "key": "relative_path.key", // relative path to key
+      "cert": "relative_path.crt" // relative path to cert
+    },
+    "port": 8080 // the port to use
   },
-  {
-    "route": "/js",
-    "file": "html.js",
-    "type": "javascript",
-    "requestType": "GET"
-  },
-  {
-    "route": "/helloworld",
-    "file": "html.js", // if you have a "func" item in, it doesn't matter if you have file or type, but you're required to have it in anyway
-    "type": "javascript",
-    "requestType": "POST",
-    "func": "posttest.js"
-  }
-]
-// the real file would not use an extension nor any comments
+  "/": [ // the route (/ = http://localhost:8080/)
+    {
+      "requestType": "GET", // the HTTP verb
+      "file": "index.html", // relative path to data file
+      "contentType": "html", // datatype
+      "externalFunction": false // if it uses an external function
+    },
+    {
+      "requestType": "POST",
+      "file": "test.js", // relative path to function file (expects [statusCode:int, headers:Object, content:string])
+      "externalFunction": true // set to `true` when there is an external function
+    }
+  ]
+}
+// the real file would not use any comments
 ```
 
 ---
 
-Creation attributed to [u1terior](https://u1t.dev/)
+Creation attributed to [u1terior](https://portfolio.u1t.dev/)
