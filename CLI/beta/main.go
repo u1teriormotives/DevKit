@@ -30,6 +30,7 @@ type RouteConfig struct {
 
 const ROUTER_JAVASCRIPT_ENDPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/JavaScript/index.js"
 const DKROUTE_ENPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/DKRoute.json"
+const DEFAULT_INDEX_FILE string = "sds"
 
 func getCSharpEndpoints() []string {
 	return []string{
@@ -285,11 +286,29 @@ var makeDKRouteFileCommand = &cobra.Command{
 		}
 	},
 }
+var makeDefaultIndexHtmlFileCommand = &cobra.Command{
+	Use:   "index",
+	Short: "make a default index.html file",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		body, e := fetch(ctx, DEFAULT_INDEX_FILE)
+		if e != nil {
+			panic(e)
+		}
+		dir, e := currentDirectory()
+		content := string(body)
+		path := filepath.Join(dir, "index.html")
+		file(path, content, RW)
+	},
+}
 
 func init() {
 	routeFetch.Flags().StringVarP(&routerVersion, "router", "r", "javascript", "the router version to install")
 	makeDKRouteFileCommand.Flags().StringVarP(&filePath_DKROUTE, "path", "p", "DKRoute.json", "where the file should be")
 	makeFileCommand.AddCommand(makeDKRouteFileCommand)
+	makeFileCommand.AddCommand(makeDefaultIndexHtmlFileCommand)
 	fetchCommand.AddCommand(routeFetch)
 	root.Flags().BoolVarP(&flag_Version, "version", "v", false, "prints the current version of the CLI")
 	root.AddCommand(makeFileCommand)
