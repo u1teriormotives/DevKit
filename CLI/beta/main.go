@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	RWE os.FileMode = 0644
-	RW  os.FileMode = 0755
+	RWE os.FileMode = 0755
+	RW  os.FileMode = 0644
 )
 const (
 	DKPM_VERSION string = "v0.1.0-beta"
