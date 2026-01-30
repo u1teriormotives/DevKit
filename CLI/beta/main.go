@@ -30,7 +30,8 @@ type RouteConfig struct {
 
 const ROUTER_JAVASCRIPT_ENDPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/JavaScript/index.js"
 const DKROUTE_ENPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/DKRoute.json"
-const DEFAULT_INDEX_FILE string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/generic_index.html"
+const DEFAULT_INDEX_FILE_ENDPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/generic_index.html"
+const APIKEY_GENERATOR_FILE_ENDPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Libraries/APIKeyGenerator.c"
 
 func getCSharpEndpoints() []string {
 	return []string{
@@ -291,7 +292,7 @@ var makeDefaultIndexHtmlFileCommand = &cobra.Command{
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		body, e := fetch(ctx, DEFAULT_INDEX_FILE)
+		body, e := fetch(ctx, DEFAULT_INDEX_FILE_ENDPOINT)
 		if e != nil {
 			panic(e)
 		}
@@ -301,12 +302,30 @@ var makeDefaultIndexHtmlFileCommand = &cobra.Command{
 		file(path, content, RW)
 	},
 }
+var makeAPIKeyGenFileCommand = &cobra.Command{
+	Use:   "apikey",
+	Short: "generate the source code for generating API keys (does not compile for you)",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		body, e := fetch(ctx, APIKEY_GENERATOR_FILE_ENDPOINT)
+		if e != nil {
+			panic(e)
+		}
+		dir, e := currentDirectory()
+		content := string(body)
+		path := filepath.Join(dir, "genkey.c")
+		file(path, content, RW)
+	},
+}
 
 func init() {
 	routeFetch.Flags().StringVarP(&routerVersion, "router", "r", "javascript", "the router version to install")
 	makeDKRouteFileCommand.Flags().StringVarP(&filePath_DKROUTE, "path", "p", "DKRoute.json", "where the file should be")
 	makeFileCommand.AddCommand(makeDKRouteFileCommand)
 	makeFileCommand.AddCommand(makeDefaultIndexHtmlFileCommand)
+	makeFileCommand.AddCommand(makeAPIKeyGenFileCommand)
 	fetchCommand.AddCommand(routeFetch)
 	root.Flags().BoolVarP(&flag_Version, "version", "v", false, "prints the current version of the CLI")
 	root.AddCommand(makeFileCommand)
