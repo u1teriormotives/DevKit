@@ -88,8 +88,6 @@ static void zero(void *p, size_t n) {
     while (n--) *vp++ = 0;
 }
 
-static const char alphabet[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-_";
-
 int main(void) {
     const size_t length = 128;
     char key[length + 1];
