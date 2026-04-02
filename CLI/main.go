@@ -1,23 +1,26 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
+
+	"github.com/spf13/cobra"
 )
 
-var binaryLocation = os.Args[0]
-
 const (
-	RWE os.FileMode = 0644
-	RW  os.FileMode = 0755
+	RWE os.FileMode = 0755
+	RW  os.FileMode = 0644
+)
+const (
+	DKPM_VERSION string = "v0.1.1"
 )
 
 type RouteConfig struct {
@@ -27,14 +30,8 @@ type RouteConfig struct {
 
 const ROUTER_JAVASCRIPT_ENDPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/JavaScript/index.js"
 const DKROUTE_ENPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/DKRoute.json"
-
-func currentTime() string {
-	var now = time.Now()
-	var hours = strconv.Itoa(now.Local().Hour())
-	var minutes = strconv.Itoa((now.Local().Minute()))
-
-	return "\x1b[4;94;40m" + hours + ":" + minutes + "\x1b[0m"
-}
+const DEFAULT_INDEX_FILE_ENDPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/generic_index.html"
+const APIKEY_GENERATOR_FILE_ENDPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Libraries/APIKeyGenerator.c"
 
 func getCSharpEndpoints() []string {
 	return []string{
@@ -46,7 +43,81 @@ func getCSharpEndpoints() []string {
 	}
 }
 
-var CSHARP_ENDPOINTS []string = getCSharpEndpoints()
+var ROUTER_CSHARP_ENDPOINTS []string = getCSharpEndpoints()
+
+func currentDirectory() (string, error) {
+	dir, e := os.Getwd()
+	return dir, e
+}
+
+func currentTime() string {
+	var now = time.Now()
+	var hours = strconv.Itoa(now.Local().Hour())
+	var minutes = strconv.Itoa((now.Local().Minute()))
+	if now.Local().Minute() < 10 {
+		minutes = "0" + minutes
+	}
+
+	return "\x1b[4;94;40mDEVKIT\x1b[0m::\x1b[4;94;40m" + hours + ":" + minutes + "\x1b[0m"
+}
+
+func fetch(ctx context.Context, url string) ([]byte, error) {
+	transport := &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   5 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		TLSHandshakeTimeout: 5 * time.Second,
+	}
+	client := &http.Client{
+		Transport: transport,
+		Timeout:   10 * time.Second,
+	}
+
+	req, e := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if e != nil {
+		return nil, fmt.Errorf(currentTime()+" -> failed to create request: %w", e)
+	}
+
+	res, e := client.Do(req)
+	fmt.Println(currentTime()+" -> attempting request @", url)
+	if e != nil {
+		return nil, fmt.Errorf(currentTime()+" -> request failed: %w", e)
+	}
+	fmt.Println(currentTime()+" -> requested resource @", url, "has returned")
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf(currentTime()+" -> bad status: %w", res.StatusCode)
+	}
+
+	body, e := io.ReadAll(res.Body)
+	if e != nil {
+		return nil, fmt.Errorf(currentTime()+" -> failed to read body: %w", e)
+	}
+	return body, nil
+}
+
+func getRouteConfiguration() (RouteConfig, error) {
+	dir, e := currentDirectory()
+	if e != nil {
+		return RouteConfig{"s", "s"}, e
+	}
+
+	var p = filepath.Join(dir, ".dk", "route-config.json")
+	_, e = os.Stat(p)
+	if e == nil {
+		cont, e := os.ReadFile(p)
+		if e != nil {
+			return RouteConfig{"s", "s"}, e
+		}
+		var d RouteConfig
+		_ = json.Unmarshal(cont, &d)
+		return d, nil
+	} else {
+		return RouteConfig{"s", "s"}, e
+	}
+}
 
 func file(path string, content string, mode os.FileMode) error {
 	f, e := os.Create(path)
@@ -54,210 +125,216 @@ func file(path string, content string, mode os.FileMode) error {
 		return e
 	}
 	defer f.Close()
-	fmt.Println("\x1b[4;94;40mDEVKIT\x1b[0m::"+currentTime()+" Created file @", path)
+	fmt.Println(currentTime()+" -> created file @", path)
 
 	_, e = f.WriteString(content)
 	if e != nil {
 		return e
 	}
-	fmt.Println("\x1b[4;94;40mDEVKIT\x1b[0m::"+currentTime()+" Written content to", path)
+	fmt.Println(currentTime()+" -> written content to", path)
 
 	e = os.Chmod(path, mode)
 	if e != nil {
 		return e
 	}
-	fmt.Println("\x1b[4;94;40mDEVKIT\x1b[0m::"+currentTime()+" Modified permissions for", path, "to be", mode)
+	fmt.Println(currentTime()+" -> modified permissions for", path, "to be", mode)
 
 	return nil
 }
 
-func currentDirectory() (string, error) {
-	dir, e := os.Getwd()
-	return dir, e
+func dkDirectory_Route(routerType string, path string) error {
+	dir, e := currentDirectory()
+	if e != nil {
+		_, e = os.Stat(filepath.Join(dir, ".dk"))
+		if e == nil {
+			_, e = os.Stat(filepath.Join(dir, ".dk", "route-config.json"))
+			if e != nil {
+				_, e = os.Create(filepath.Join(dir, ".dk", "route-config.json"))
+				if e != nil {
+					return e
+				}
+			}
+			var d string = "{ \"router\": \"%s\" \"mainFilePath\": \"%s\"}"
+			e = file(path, fmt.Sprintf(d, routerType, path), RW)
+			if e != nil {
+				return e
+			}
+		}
+		return nil
+	} else {
+		return e
+	}
 }
 
-func directory() error {
+var (
+	filePath_DKROUTE string
+)
+
+func dkRouteFile() error {
 	dir, e := currentDirectory()
 	if e != nil {
 		return e
 	}
-	e = os.Mkdir(filepath.Join(dir, ".dk"), RW)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	body, e := fetch(ctx, DKROUTE_ENPOINT)
+	DKRoutePresetData := string(body)
+
+	e = file(filepath.Join(dir, filePath_DKROUTE), DKRoutePresetData, RW)
 	if e != nil {
 		return e
+	} else {
+		return nil
 	}
+}
 
-	return nil
+var (
+	flag_Version bool
+)
+
+var root = &cobra.Command{
+	Use:   "dkpm",
+	Short: "the devkit package manager",
+	Run: func(cmd *cobra.Command, args []string) {
+		if flag_Version {
+			fmt.Println(currentTime()+" -> dkpm version:", string(DKPM_VERSION))
+		}
+	},
+}
+
+var (
+	routerVersion string
+)
+var fetchCommand = &cobra.Command{
+	Use:   "fetch",
+	Short: "fetch a package from DevKit",
+}
+var routeFetch = &cobra.Command{
+	Use:   "route",
+	Short: "fetch a router",
+	Run: func(cmd *cobra.Command, args []string) {
+		switch routerVersion {
+		case "javascript", "js":
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			body, e := fetch(ctx, ROUTER_JAVASCRIPT_ENDPOINT)
+			if e != nil {
+				panic(e)
+			}
+			dir, e := currentDirectory()
+			if e != nil {
+				panic(e)
+			}
+
+			content := string(body)
+
+			path := filepath.Join(dir, "route.js")
+			e = file(path, content, RWE)
+			if e != nil {
+				panic(e)
+			}
+			e = dkDirectory_Route("javascript", path)
+			if e != nil {
+				panic(e)
+			}
+		case "c#", "csharp", "c-sharp":
+			for i := 0; i < len(ROUTER_CSHARP_ENDPOINTS); i++ {
+				var endpoint string = ROUTER_CSHARP_ENDPOINTS[i]
+				ctx, cancel := context.WithCancel(context.Background())
+				defer cancel()
+
+				body, e := fetch(ctx, endpoint)
+				if e != nil {
+					panic(e)
+				}
+				dir, e := currentDirectory()
+				if e != nil {
+					panic(e)
+				}
+
+				content := string(body)
+
+				path := filepath.Join(dir, filepath.Base(endpoint))
+				e = file(path, content, RWE)
+				if e != nil {
+					panic(e)
+				}
+				e = dkDirectory_Route("csharp", path)
+				if e != nil {
+					panic(e)
+				}
+			}
+		}
+	},
+}
+
+var makeFileCommand = &cobra.Command{
+	Use:   "make",
+	Short: "make a file from devkit presets",
+}
+var makeDKRouteFileCommand = &cobra.Command{
+	Use:   "dkroute",
+	Short: "make the DKRoute.json file",
+	Run: func(cmd *cobra.Command, args []string) {
+		e := dkRouteFile()
+		if e != nil {
+			panic(e)
+		}
+	},
+}
+var makeDefaultIndexHtmlFileCommand = &cobra.Command{
+	Use:   "index",
+	Short: "make a default index.html file",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		body, e := fetch(ctx, DEFAULT_INDEX_FILE_ENDPOINT)
+		if e != nil {
+			panic(e)
+		}
+		dir, e := currentDirectory()
+		content := string(body)
+		path := filepath.Join(dir, "index.html")
+		file(path, content, RW)
+	},
+}
+var makeAPIKeyGenFileCommand = &cobra.Command{
+	Use:   "apikey",
+	Short: "generate the source code for generating API keys (does not compile for you)",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		body, e := fetch(ctx, APIKEY_GENERATOR_FILE_ENDPOINT)
+		if e != nil {
+			panic(e)
+		}
+		dir, e := currentDirectory()
+		content := string(body)
+		path := filepath.Join(dir, "genkey.c")
+		file(path, content, RW)
+	},
+}
+
+func init() {
+	routeFetch.Flags().StringVarP(&routerVersion, "router", "r", "javascript", "the router version to install")
+	makeDKRouteFileCommand.Flags().StringVarP(&filePath_DKROUTE, "path", "p", "DKRoute.json", "where the file should be")
+	makeFileCommand.AddCommand(makeDKRouteFileCommand)
+	makeFileCommand.AddCommand(makeDefaultIndexHtmlFileCommand)
+	makeFileCommand.AddCommand(makeAPIKeyGenFileCommand)
+	fetchCommand.AddCommand(routeFetch)
+	root.Flags().BoolVarP(&flag_Version, "version", "v", false, "prints the current version of the CLI")
+	root.AddCommand(makeFileCommand)
+	root.AddCommand(fetchCommand)
 }
 
 func main() {
-	argc := len(os.Args) - 1
-	argv := make([]string, argc)
-
-	dir, e := currentDirectory()
-	if e != nil {
-		panic(e)
-	}
-
-	copy(argv, os.Args[1:])
-
-	if argc < 2 {
-		panic("Too little arguments!")
-	}
-	mainCommand := argv[0]
-	if mainCommand == "route" || mainCommand == "router" {
-		routeType := argv[1]
-		switch routeType {
-		case "js", "javascript":
-			{
-				fmt.Println("Making files...")
-				{
-					res, e := http.Get(ROUTER_JAVASCRIPT_ENDPOINT)
-					if e != nil {
-						panic(e)
-					}
-					defer res.Body.Close()
-
-					body, e := io.ReadAll(res.Body)
-					if e != nil {
-						panic(e)
-					}
-					var routePath string = filepath.Join(dir, "route.js")
-					e = file(routePath, string(body), RWE)
-					if e != nil {
-						panic(e)
-					}
-				}
-				{
-					res, e := http.Get(DKROUTE_ENPOINT)
-					if e != nil {
-						panic(e)
-					}
-					defer res.Body.Close()
-
-					body, e := io.ReadAll(res.Body)
-					if e != nil {
-						panic(e)
-					}
-
-					var dkRoutePath string = filepath.Join(dir, "DKRoute.json")
-					e = file(dkRoutePath, string(body), RW)
-					if e != nil {
-						panic(e)
-					}
-				}
-				fmt.Println("Running \x1b[97mnpm i express\x1b[0m")
-				cmd := exec.Command("npm", "i", "express")
-				out, e := cmd.CombinedOutput()
-				if e != nil {
-					panic(e)
-				}
-				fmt.Println("Output from npm:", string(out))
-
-				e = directory()
-				if e != nil {
-					panic(e)
-				}
-				const cont string = `{
-  "router": "javascript",
-  "mainFilePath": "%s"
-}`
-				e = file(filepath.Join(dir, ".dk", "route-config.json"), fmt.Sprintf(cont, filepath.Join(dir, "route.js")), RW)
-				if e != nil {
-					panic(e)
-				}
-			}
-		case "c#", "c-sharp", "csharp":
-			{
-				fmt.Println("Making files...")
-				for i := 0; i < len(CSHARP_ENDPOINTS); i++ {
-					var endpoint string = CSHARP_ENDPOINTS[i]
-					res, e := http.Get(endpoint)
-					if e != nil {
-						panic(e)
-					}
-					defer res.Body.Close()
-
-					body, e := io.ReadAll(res.Body)
-					if e != nil {
-						panic(e)
-					}
-
-					var fileSplit = strings.Split(endpoint, "/")
-					var fileName = fileSplit[len(fileSplit)-1]
-					var filePath = filepath.Join(dir, fileName)
-
-					e = file(filePath, string(body), RW)
-					if e != nil {
-						panic(e)
-					}
-				}
-				var path string = filepath.Join(dir, "DKRoute.json")
-				res, e := http.Get(DKROUTE_ENPOINT)
-				if e != nil {
-					panic(e)
-				}
-				defer res.Body.Close()
-				body, e := io.ReadAll(res.Body)
-				if e != nil {
-					panic(e)
-				}
-				e = file(path, string(body), RW)
-				if e != nil {
-					panic(e)
-				}
-
-				e = directory()
-				if e != nil {
-					panic(e)
-				}
-				const cont string = `{
-  "router": "c-sharp",
-  "mainFilePath": "%s"
-}`
-				e = file(filepath.Join(dir, ".dk", "route-config.json"), fmt.Sprintf(cont, filepath.Join(dir, "Program.cs")), RW)
-				if e != nil {
-					panic(e)
-				}
-			}
-		}
-	} else if mainCommand == "run" {
-		secondaryCommand := argv[1]
-
-		if secondaryCommand == "router" {
-			_, e := os.Stat(filepath.Join(dir, ".dk", "route-config.json"))
-			if e == nil {
-				cont, err := os.ReadFile(filepath.Join(dir, ".dk", "route-config.json"))
-				if err != nil {
-					panic(err)
-				}
-
-				var content RouteConfig
-				_ = json.Unmarshal(cont, &content)
-
-				switch content.Route {
-				case "javascript":
-					{
-						cmd := exec.Command("node", content.Route)
-						out, e := cmd.CombinedOutput()
-						if e != nil {
-							panic(e)
-						}
-						fmt.Println(string(out))
-					}
-				case "c-sharp":
-					{
-						cmd := exec.Command("dotnet", "run")
-						out, e := cmd.CombinedOutput()
-						if e != nil {
-							panic(e)
-						}
-						fmt.Println(string(out))
-					}
-				}
-			} else {
-				panic(e)
-			}
-		}
+	if e := root.Execute(); e != nil {
+		fmt.Fprintln(os.Stderr, currentTime()+" -> ERROR: ", e)
+		os.Exit(1)
 	}
 }
