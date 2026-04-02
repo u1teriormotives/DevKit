@@ -3,7 +3,7 @@ A WebGPU-Based Schema Webpage Renderer with a Twist
 
 ---
 
-**IMPORTANT NOTE**: The C# router is now deprecated until it is rewritten given the change in `DKRoute.json` syntax. Do not use it unless you use the old syntax.
+**IMPORTANT NOTE**: The C# router is now deprecated until it is rewritten given the change in `DKRoute.json` syntax. Do not use it unless you use the old syntax. 
 
 DevKit is an HTTP rendering engine that allows for websites to be written & coded in languages such as:
 - HTML
