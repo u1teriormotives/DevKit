@@ -29,6 +29,7 @@ MD/markup-editor/**
 
 # specific files in the root
 commit
+push
 normalize.js
 files.js
 # specific files in various directories
