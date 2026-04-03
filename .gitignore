@@ -4,7 +4,6 @@
 **/node_modules
 **/target
 **/.vercel
-Applications/WebGPU Test/webgpu
 CLI/.dk
 CLI/.dk/**
 Documentation/**
@@ -27,16 +26,14 @@ MD/markup-editor/**
 **/*.wasm
 **/*.wat
 # file types in various directories
-Testing/C++ Test Library/*.js
-Testing/C++ Test Library/*.html
 
 # specific files in the root
 commit
 normalize.js
 files.js
 # specific files in various directories
+Applications/WebGPU Test/webgpu
 CLI/main
 MD/QueryIdGen
-MD/parsing/main.py
 Routing/**/bin
 Routing/**/obj
