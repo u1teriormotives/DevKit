@@ -2,7 +2,7 @@
 {document /}                        -> declares document type (i.e., what it was compiled from, if it was handwritten or not, language, etc.)
     self-contained
     Attributes: (t="type")      => what it was compiled from or if it was handwritten (e.g., "html5", "java", "js_ts", "csharp", "c", "dk", etc.; random metadata)
-                (l="language")  => the language the source content is in (ISO-639-2)
+                (l="language")  => the language the source content is in (RFC 5646)
 [document $:tree]   -> encompassing document tree
 [head $:head]       -> encompassing metadata tree (head)
 [body $:body]       -> encompassing viewable data tree (body)
