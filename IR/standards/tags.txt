@@ -1,0 +1,36 @@
+{DOCUMENT /}
+{document /}                        -> declares document type (i.e., what it was compiled from, if it was handwritten or not, language, etc.)
+    self-contained
+    Attributes: (t="type")      => what it was compiled from or if it was handwritten (e.g., "html5", "java", "js_ts", "csharp", "c", "dk", etc.; random metadata)
+                (l="language")  => the language the source content is in (ISO-639-2)
+[document $:tree]   -> encompassing document tree
+[head $:head]       -> encompassing metadata tree (head)
+[body $:body]       -> encompassing viewable data tree (body)
+[meta $:randomId]                   -> metadata element
+    uses closing tag
+    Attributes: (name="key" /)          => the key
+                (content="value" /)     => the value
+                (http-equiv="key" /)    => modifies header
+[title $:title]                     -> webpage title
+    uses closing tag
+    uses text content
+[external-source $:randomId]        -> marks an external source (e.g., stylesheet, script)
+    uses closing tag
+    Attributes: (type="type" /)         => the type of source ("stylesheet", "script")
+                (source-url="url" /)    => the url of the source (must be valid uri; validated at compile-time)
+[internal-source $:randomId]        -> marks an internal source (e.g., stylesheet, script)
+    uses closing tag
+    uses text content
+    Attributes: (type="type" /)         => the type of source ("stylesheet", "script")
+                (content-type="type" /) => the content-type of the source (MIME Type)
+[element::namespace $:randomId]     -> element that modifies the viewable content
+    uses closing tag
+    uses text content (optional)
+    can have children
+    Attributes: (user-agent-classification="value" /)   => key/value pair for the compiled source (what would html5 call it)
+                (set-classification="value" /)          => user-set class (i.e., html's "class" attribute)
+                (set-identifier="value" /)              => user-set id (i.e., html's "id" attribute)
+                (writeable="boolean" /)                 => if the client can write in it (e.g., textbox)
+                (active="boolean" /)                    => if the element is viewable
+                (hidden="boolean" /)                    => alias for active
+                (position={x, y, z} /)                  => keyset for position (auto-calculated or set by user)
