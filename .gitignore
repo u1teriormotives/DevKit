@@ -8,8 +8,6 @@ CLI/.dk
 CLI/.dk/**
 Documentation/**
 Documentation
-MD/markup-editor
-MD/markup-editor/**
 
 # file types
 **/*.lock
@@ -35,6 +33,6 @@ files.js
 # specific files in various directories
 Applications/WebGPU Test/webgpu
 CLI/main
-MD/QueryIdGen
+IR/QueryIdGen
 Routing/**/bin
 Routing/**/obj
