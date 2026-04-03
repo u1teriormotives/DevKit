@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-wgpu = "0.15"
+wgpu = "29.0"
 winit = "0.28"
 wgpu_glyph = "0.19"
 futures = "0.3"
