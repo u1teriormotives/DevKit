@@ -36,6 +36,7 @@ normalize.js
 files.js
 # specific files in various directories
 CLI/main
+MD/QueryIdGen
 MD/parsing/main.py
 Routing/**/bin
 Routing/**/obj
