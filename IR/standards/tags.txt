@@ -103,3 +103,84 @@
                 (user-agent-classification="value" /)   => key/value pair for the compiled source (what would html5 call it)
                 (volume="float" /)                      => initial volume level (0.0-1.0)
                 (writeable="boolean" /)                 => if the client can write in it (e.g., textbox)
+    Namespaces: paragraph               => a default paragraph text element
+                header                  => a header text element, depends on (user-agent-classification /) & (set-classification /) for its size
+                link                    => a followable link
+                label                   => a visible label bound to another element (e.g., a caption for a figure)
+                search                  => a search region
+                vertical_separator      => a vertical line
+                horizontal_separator    => a horizontal line
+                line_break              => a linebreak
+                media::subspace         => a media element, depends on a subspace for its classification
+                    media::visual   ==> a visual element (e.g., image, video)
+                    media::audio    ==> an audio element (e.g., mp3 file)
+                structure::subspace     => an element for structure purposes, depends on a subspace for its classification
+                    structure::divider          ==> a content division element (i.e., the div element in html)
+                    structure::span             ==> a content span element (i.e., the span element in html)
+                    structure::code             ==> a codeblock
+                    structure::quote            ==> a quote
+                    structure::citation         ==> a citation
+                    structure::aside            ==> an aside
+                    structure::caption          ==> a caption
+                    structure::details          ==> a collapsible details section
+                    structure::dialog           ==> dialog
+                    structure::menu             ==> a menu
+                    structure::main             ==> the main content
+                    structure::section          ==> a section of the content
+                    structure::subsection       ==> a subsection of a section
+                    structure::navigator        ==> a navigation bar
+                    structure::footer           ==> trailing content
+                    structure::figure           ==> a media/content unit
+                    structure::banner           ==> content block similar to a header
+                    structure::header           ==> leading content
+                    structure::tooltip          ==> contextual helper content
+                    structure::warning          ==> warning callout
+                    structure::notice           ==> informational callout
+                text::subspace          => inline or semantic text elements, depends on a subspace for its classification
+                    text::abbreviation  ==> abbreviation with expansion
+                    text::definition    ==> defining instance of a term
+                    text::keyboard      ==> keyboard input text
+                    text::sample        ==> sample output
+                    text::variable      ==> variable name
+                    text::time          ==> timestamp or date
+                form::subspace          => interactive input and form elements, depends on a subspace for its classification
+                    form::form          ==> container for input controls
+                    form::input         ==> generic user input field
+                    form::textbox       ==> textual input
+                    form::textarea      ==> multiline text input
+                    form::checkbox      ==> boolean checkbox
+                    form::radio         ==> single-selection radio option
+                    form::button        ==> interactive button
+                    form::submit        ==> form submission control
+                    form::label         ==> label for input element
+                    form::select        ==> selectable list container
+                    form::option        ==> selectable option
+                    form::option_group  ==> group of options
+                    form::progress      ==> progress indicator
+                    form::meter         ==> bounded numeric gauge
+                    form::fieldset      ==> grouping container
+                    form::legend        ==> label for fieldset
+                table::subspace         => tabular data structures, depends on a subspace for its classification
+                    table::table        ==> table container
+                    table::header       ==> header row group
+                    table::body         ==> table body
+                    table::footer       ==> table footer
+                    table::row          ==> table row
+                    table::cell         ==> table data cell
+                    table::header_cell  ==> header cell
+                    table::column_group ==> column grouping
+                    table::column       ==> column definition
+                article::subspace       => content-blocks, depends on a subspace for its classification
+                    article::article    ==> standalone article/document entry
+                    article::post       ==> post-like entry
+                    article::entry      ==> generic feed/article entry
+                    article::commentary ==> comment/reply block
+                    article::summary    ==> summary/abstract block
+                    article::address    ==> contact/authorship block
+                list::subspace          => lists, depends on a subspace for its classification
+                    list::ordered       ==> ordered list
+                    list::unordered     ==> unordered list
+                    list::item          ==> list item
+                    list::description   ==> description list
+                    list::term          ==> description term
+                    list::detail        ==> description detail
