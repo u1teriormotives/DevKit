@@ -26,11 +26,80 @@
 [element::namespace $:randomId]     -> element that modifies the viewable content
     uses closing tag
     uses text content (optional)
+    uses shadow text content (optional; i.e., default text if it is a writeable element)
     can have children
-    Attributes: (user-agent-classification="value" /)   => key/value pair for the compiled source (what would html5 call it)
-                (set-classification="value" /)          => user-set class (i.e., html's "class" attribute)
-                (set-identifier="value" /)              => user-set id (i.e., html's "id" attribute)
-                (writeable="boolean" /)                 => if the client can write in it (e.g., textbox)
-                (active="boolean" /)                    => if the element is viewable
+    Attributes: (active="boolean" /)                    => if the element is viewable
+                (alt-content="value" /)                 => alternative text for an embedded, visual source; fallback description
+                                                       if request for source fails
+                (anchor="value" /)                      => named anchor for deep linking within a document
+                (autocomplete="boolean" /)              => whether the client may request completion
+                (autoplay="boolean" /)                  => for media elements; if playback is immediate
+                (bind-direction="value" /)              => data flow direction ("one-way", "two-way")
+                (bind-property="value" /)               => specific property on bind-ref element being observed
+                (bind-ref=$:id /)                       => binds this element's state to another's
+                (caption-url="url" /)                   => caption/subtitle source url (validated at compile time; accepts only text/tsv)
+                (checked="boolean" /)                   => if a "checkbox" is toggled
+                (content-policy="value" /)              => csp scoped to the element
+                (content-type="type" /)                 => MIME type of the embedded source
+                (control-ref=$:id /)                    => declares this element is the master to another
+                (controls="boolean" /)                  => if controls are exposed for a media element
+                (cross-origin="value" /)                => cross-origin handling ("anonymous", "use-credentials")
+                (download="boolean" /)                  => if target-url should be downloaded instead of displayed
+                (download-filename="value" /)           => the name of the downloaded file if (download="true" /)
+                (draggable="boolean" /)                 => if the element is able to be dragged by the client
+                (drop-target="boolean" /)               => if the element can receive dragged elements
+                (emit-on="value" /)                     => condition on which the event is fired ("change", "blur", "load", etc.)
+                (event-handler={event, $:id} /)         => reference to a handler for an event
+                (event-trigger=[event] /)               => declares what events the element emits
+                (expanded="boolean" /)                  => if an collapsible is expanded or not
+                (focusable="boolean" /)                 => controls if the element can be tabbed onto
+                (group-ref="value" /)                   => logical group name this element belongs to
                 (hidden="boolean" /)                    => alias for active
+                (indeterminate="boolean" /)             => if an element is neither selected nor not selected (or checked and vice-versa)
+                (input-pattern="regex" /)               => validated pattern of user input for writeable content
+                (input-type="type" /)                   => expected type of input for a writeable element
+                (interactable="boolean" /)              => controls if events like "hover", "click", etc. are applicable for the element
+                (lazy-load="boolean" /)                 => defers loading until element enters viewport
+                (lazy-render="boolean" /)               => defers rendering until element is near viewport
+                (loop="boolean" /)                      => for media elements; whether playback loops
+                (max-length="integer" /)                => the maximum length of text content in an element
+                (max-select="integer" /)                => the maximum amount of selected options capable
+                (max-value="integer" /)                 => maximum integer for a writeable element that accepts numbers
+                (min-length="integer" /)                => minimum length of text content in a writeable element
+                (min-select="integer" /)                => the minimum amount of selected options capable
+                (min-value="integer" /)                 => minimum integer for a writeable element that accepts numbers
+                (multiline="boolean" /)                 => whether the client may insert a newline in their response
+                (multi-select="boolean" /)              => if multiple child options can be selected or not
+                (muted="boolean" /)                     => for media elements; if audio is audible
+                (no-referrer="boolean" /)               => suppresses referrer information when following target-url
+                (once="boolean" /)                      => if the element does not update after first render
+                (open-behavior="value" /)               => how to open target ("self", "new", "overlay")
+                (placeholder="value" /)                 => default text content; alias to shadow text content
+                (playback-end="number" /)               => the point at which playback ends in media
+                (playback-start="number" /)             => the point at which playback starts in media
                 (position={x, y, z} /)                  => keyset for position (auto-calculated or set by user)
+                (poster-url="url" /)                    => preview image shown before media playback (validated at compile time)
+                (pressed="boolean" /)                   => if a button element is depressed
+                (read-only="boolean" /)                 => if a writeable element cannot be written to
+                (rel="value" /)                         => relationship between this element and target-url
+                (render-priority="integer" /)           => priority hint (lowest -> first, highest -> last)
+                (required="boolean" /)                  => if a writeable element is required to have something in it
+                (sandbox-polity="value" /)              => what the element may do
+                (sandboxed="boolean" /)                 => if the element is separated from the rest of the document
+                (selectable="boolean" /)                => if element text can be selected or not
+                (selected="boolean" /)                  => if an element is currently selected by the client in a group of options
+                (set-classification="value" /)          => user-set class (i.e., html's "class" attribute)
+                (set-data={"key", "value"} /)           => user-defined keypair
+                (set-identifier="value" /)              => user-set id (i.e., html's "id" attribute)
+                (slot="value" /)                        => named insertion point within a parent's structure
+                (sort-index="integer" /)                => explicit sort order within a parent or group
+                (source-url="value" /)                  => url of an embedded source (e.g., image; validated at compile time)
+                (spellcheck="boolean" /)                => whether the client may check spelling
+                (step-value="integer" /)                => increment for numerical input
+                (tab-index="integer" /)                 => explicit position in focus order
+                (target-ref=$:id /)                     => internal reference to another element by internal identifier
+                (target-url="url" /)                    => destination url (validated at compile-time)
+                (trim-whitespace="boolean" /)           => whether leading and trailing whitespace is automatically trimmed
+                (user-agent-classification="value" /)   => key/value pair for the compiled source (what would html5 call it)
+                (volume="float" /)                      => initial volume level (0.0-1.0)
+                (writeable="boolean" /)                 => if the client can write in it (e.g., textbox)
