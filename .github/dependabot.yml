@@ -6,10 +6,10 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
-    directory: "/"
+    directory: "/IR/textEditor"
     schedule:
       interval: "weekly"
   - package-ecosystem: "cargo"
-    directory: "/"
+    directory: "/Applications/WebGPU Test"
     schedule:
       interval: "weekly"
