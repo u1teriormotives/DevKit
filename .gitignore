@@ -1,0 +1,41 @@
+# directories and their files
+**/.venv
+**/.vscode
+**/node_modules
+**/target
+**/.vercel
+Applications/WebGPU Test/webgpu
+CLI/.dk
+CLI/.dk/**
+Documentation/**
+Documentation
+MD/markup-editor
+MD/markup-editor/**
+
+# file types
+**/*.lock
+**/*.ignore
+**/*.o
+*.sln
+**/*.ttf
+**/.DS_Store
+**/package-lock.json
+**/go.mod
+**/go.sum
+**/main
+**/vercel.json
+**/*.wasm
+**/*.wat
+# file types in various directories
+Testing/C++ Test Library/*.js
+Testing/C++ Test Library/*.html
+
+# specific files in the root
+commit
+normalize.js
+files.js
+# specific files in various directories
+CLI/main
+MD/parsing/main.py
+Routing/**/bin
+Routing/**/obj
