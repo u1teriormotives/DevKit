@@ -16,8 +16,8 @@
     uses text content
 [external-source $:randomId]        -> marks an external source (e.g., stylesheet, script)
     uses closing tag
-    Attributes: (type="type" /)         => the type of source ("stylesheet", "script")
-                (source-url="url" /)    => the url of the source (must be valid uri; validated at compile-time)
+    Attributes: (content-type="type" /)         => the type of source ("stylesheet", "script")
+                (source-url="url" /)            => the url of the source (must be valid uri; validated at compile-time)
 [internal-source $:randomId]        -> marks an internal source (e.g., stylesheet, script)
     uses closing tag
     uses text content
@@ -184,3 +184,7 @@
                     list::description   ==> description list
                     list::term          ==> description term
                     list::detail        ==> description detail
+    Self-contained children:    [[internal-styling] -> styleObject /]           =>  styling for a specific element
+                                [[event-handler(eventName)] -> scriptObject /]  =>  internal script that fires when an
+                                                                                    element's specific event fires
+                                
