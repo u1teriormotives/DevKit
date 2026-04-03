@@ -30,7 +30,7 @@
     can have children
     Attributes: (active="boolean" /)                    => if the element is viewable
                 (alt-content="value" /)                 => alternative text for an embedded, visual source; fallback description
-                                                       if request for source fails
+                                                        if request for source fails
                 (anchor="value" /)                      => named anchor for deep linking within a document
                 (autocomplete="boolean" /)              => whether the client may request completion
                 (autoplay="boolean" /)                  => for media elements; if playback is immediate
