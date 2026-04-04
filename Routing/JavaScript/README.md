@@ -6,6 +6,7 @@
 {
   "$": { // metadata
     "useHttps": false, // controls if https is used
+    "useHttp2": false, // controls if http2 is used
     "httpsConfig": {
       "key": "relative_path.key", // relative path to key
       "cert": "relative_path.crt" // relative path to cert
@@ -16,7 +17,7 @@
     {
       "requestType": "GET", // the HTTP verb
       "file": "index.html", // relative path to data file
-      "contentType": "html", // datatype
+      "contentType": "text/html", // MIME type
       "externalFunction": false // if it uses an external function
     },
     {
