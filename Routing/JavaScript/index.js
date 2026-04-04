@@ -100,6 +100,23 @@ if (typeof port !== "number" || port > 65535 || port < 0) {
   fatalException();
   throw new Error(`Port provided (${port}) invalid`);
 }
+const __DKRATELIMITING = {
+  enabled: false,
+  timeframe: 0,
+  max_requests: 0,
+};
+
+if (
+  __DKROUTE_METADATA.ratelimiting.enabled &&
+  __DKROUTE_METADATA.ratelimiting["timeframe-m"] &&
+  __DKROUTE_METADATA.ratelimiting["max-requests"]
+) {
+  __DKRATELIMITING.enabled = true;
+  __DKRATELIMITING.timeframe =
+    Number(__DKROUTE_METADATA.ratelimiting["timeframe-m"]) * 60 * 1000;
+  __DKRATELIMITING.max_requests =
+    __DKROUTE_METADATA.ratelimiting["max-requests"];
+}
 
 if (__DKROUTE_METADATA.useHttps) {
   useHttps = true;
@@ -212,9 +229,32 @@ const server = useHttp2
     ? https.createServer(opts)
     : http.createServer();
 
+const ratelimit = new Map();
+
 server.on("request", async (req, res) => {
   const host = req.headers.host ?? req.headers[":authority"] ?? "localhost";
   const url = new URL(`http${useHttps ? "s" : ""}://${host}${req.url}`);
+
+  const ip = req.socket.remoteAddress ?? "unknown";
+  const now = Date.now();
+  const record = ratelimit.get(ip) ?? { count: 0, windowStart: now };
+
+  if (now - record.windowStart > WINDOW_MS) {
+    record.count = 0;
+    record.windowStart = now;
+  }
+  record.count++;
+  ratelimit.set(ip, record);
+
+  if (record.count > MAX_REQUESTS) {
+    res.statusCode = 429;
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader(
+      "Retry-After",
+      Math.ceil((record.windowStart + WINDOW_MS - now) / 1000),
+    );
+    return res.end("429 Too Many Requests");
+  }
 
   const requestId = crypto.randomUUID();
   console.log(

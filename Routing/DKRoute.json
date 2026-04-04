@@ -6,7 +6,12 @@
       "key": "relative_path.key",
       "cert": "relative_path.crt"
     },
-    "port": 8080
+    "port": 8080,
+    "ratelimiting": {
+      "enabled": false,
+      "max-requests": 200,
+      "timeframe-m": 30
+    }
   },
   "/": [
     {
