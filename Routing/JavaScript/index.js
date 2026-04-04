@@ -31,6 +31,7 @@ mimeTypes
   .set(".webp", "image/webp")
   .set(".csv", "text/csv")
   .set(".tsv", "application/tab-separated-values")
+  .set(".dks", "text/dkstyle")
   .set(".dkx", "text/dkx");
 const currentTime = () => {
   const now = new Date();
