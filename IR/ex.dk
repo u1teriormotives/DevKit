@@ -17,7 +17,8 @@
         [/title $:title]
 
         [external-source $:9N5K14Oji4TYEA34]
-            (content-type="stylesheet" /)
+            (type="stylesheet" /)
+            (content-type="text/css" /)
             (source-url="main.css" /)
         [/external-source $:9N5K14Oji4TYEA34]
         [internal-source $:9d4WH18qz13DKH46]
