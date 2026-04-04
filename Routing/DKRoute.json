@@ -1,6 +1,7 @@
 {
   "$": {
     "useHttps": false,
+    "useHttp2": false,
     "httpsConfig": {
       "key": "relative_path.key",
       "cert": "relative_path.crt"
@@ -11,7 +12,7 @@
     {
       "requestType": "GET",
       "file": "index.html",
-      "contentType": "html",
+      "contentType": "text/html",
       "externalFunction": false
     },
     {

@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-import { randomUUID } from "node:crypto";
+import crypto from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import fs from "node:fs/promises";
 import http from "node:http";
+import http2 from "node:http2";
 import https from "node:https";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +13,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const __DKROUTE_PATH = path.join(__dirname, "DKRoute.json");
 
+const mimeTypes = new Map();
+mimeTypes
+  .set(".html", "text/html")
+  .set(".htm", "text/html")
+  .set(".css", "text/css")
+  .set(".js", "application/javascript")
+  .set(".json", "application/json")
+  .set(".png", "image/png")
+  .set(".jpg", "image/jpeg")
+  .set(".jpeg", "image/jpeg")
+  .set(".jpe", "image/jpeg")
+  .set(".tiff", "image/tiff")
+  .set(".tif", "image/tiff")
+  .set(".ico", "image/x-icon")
+  .set(".svg", "image/svg+xml")
+  .set(".webp", "image/webp")
+  .set(".csv", "text/csv")
+  .set(".tsv", "application/tab-separated-values")
+  .set(".dkx", "text/dkx");
 const currentTime = () => {
   const now = new Date();
   const hours =
@@ -28,7 +48,7 @@ const nonfatalException = () =>
 if (!existsSync(__DKROUTE_PATH)) {
   fatalException();
   throw new Error(
-    `Expected DKRoute.json at ${__DKROUTE_PATH}, file does not exist.`
+    `Expected DKRoute.json at ${__DKROUTE_PATH}, file does not exist.`,
   );
 }
 
@@ -43,13 +63,10 @@ const validVerbs = new Set([
   "connect",
   "trace",
 ]);
-const MIME = new Map();
-MIME.set("html", "text/html");
-MIME.set("js", "text/javascript");
-MIME.set("json", "application/json");
-MIME.set("css", "text/css");
-let useHttps = false;
-const httpsOptions = {
+
+let useHttps = false,
+  useHttp2 = false;
+const opts = {
   cert: "",
   key: "",
 };
@@ -60,12 +77,18 @@ if (!__DKROUTE_DATA_RAW) {
   throw new Error(`No data exists in DKRoute.json (found @ ${__DKROUTE_PATH})`);
 }
 
-const __DKROUTE_DATA = JSON.parse(__DKROUTE_DATA_RAW);
+let __DKROUTE_DATA;
+try {
+  __DKROUTE_DATA = JSON.parse(__DKROUTE_DATA_RAW);
+} catch {
+  fatalException();
+  throw new Error(`DKRoute.json is not valid JSON (found @ ${__DKROUTE_PATH})`);
+}
 const __DKROUTE_METADATA = __DKROUTE_DATA["$"] ?? null;
 if (!__DKROUTE_METADATA) {
   fatalException();
   throw new Error(
-    `No metadata found in DKRoute.json (found @ ${__DKROUTE_PATH})`
+    `No metadata found in DKRoute.json (found @ ${__DKROUTE_PATH})`,
   );
 }
 if (!__DKROUTE_METADATA.port) {
@@ -87,21 +110,22 @@ if (__DKROUTE_METADATA.useHttps) {
   ) {
     fatalException();
     throw new Error(
-      `HTTPS Config malformed or does not exist (found @ ${__DKROUTE_PATH})`
+      `HTTPS Config malformed or does not exist (found @ ${__DKROUTE_PATH})`,
     );
   }
 
-  httpsOptions["cert"] = readFileSync(
-    path.join(__dirname, __DKROUTE_METADATA.httpsConfig.cert)
+  opts["cert"] = readFileSync(
+    path.join(__dirname, __DKROUTE_METADATA.httpsConfig.cert),
   );
-  httpsOptions["key"] = readFileSync(
-    path.join(__dirname, __DKROUTE_METADATA.httpsConfig.key)
+  opts["key"] = readFileSync(
+    path.join(__dirname, __DKROUTE_METADATA.httpsConfig.key),
   );
 }
+if (__DKROUTE_METADATA.useHttp2) useHttp2 = true;
 
 const validRoutes = new Map();
 const inputRoutes = Object.keys(__DKROUTE_DATA).filter((v) =>
-  v.startsWith("/")
+  v.startsWith("/"),
 );
 
 for (const route of inputRoutes) {
@@ -110,7 +134,7 @@ for (const route of inputRoutes) {
     console.error(
       `Route ${route} has invalid schema: ${typeof __DKROUTE_DATA[
         route
-      ]} invalid type; looking for Array<Object>. Continuing...`
+      ]} invalid type; looking for Array<Object>. Continuing...`,
     );
     continue;
   }
@@ -134,7 +158,7 @@ for (const route of inputRoutes) {
     ) {
       nonfatalException();
       console.error(
-        `${verb} ${route} has invalid file configuration. Continuing...`
+        `${verb} ${route} has invalid file configuration. Continuing...`,
       );
       continue;
     }
@@ -144,7 +168,7 @@ for (const route of inputRoutes) {
       if (typeof func.default !== "function") {
         nonfatalException();
         console.error(
-          `${verb} ${route} has invalid external function in ${file}. Continuing...`
+          `${verb} ${route} has invalid external function in ${file}. Continuing...`,
         );
         func = null;
         continue;
@@ -158,7 +182,10 @@ for (const route of inputRoutes) {
       validRoutes.set(`${verb.toUpperCase()} ${route}`, {
         external: false,
         file: path.join(__dirname, file),
-        fileType: method.contentType ?? "txt",
+        fileType:
+          method.contentType ??
+          mimeTypes.get(path.extname(file)) ??
+          "text/plain",
       });
       continue;
     }
@@ -168,72 +195,117 @@ for (const route of inputRoutes) {
 const routes = new Set();
 validRoutes.forEach((v, k) => routes.add(k.split(" ", 2)[1]));
 
-let server;
-if (useHttps) server = https.createServer(httpsOptions);
-else server = http.createServer();
+if (useHttp2 && !useHttps) {
+  fatalException();
+  throw new Error("You must enable HTTPS in order to HTTP/2");
+}
+
+// because intellisense is a meanie, i have to do this so i can see what i'm doing >:(
+/**
+ * @type {http.Server<typeof http.IncomingMessage, typeof http.OutgoingMessage>}
+ */
+const server = useHttp2
+  ? useHttps
+    ? http2.createSecureServer(opts)
+    : console.log("how did you get past the throw")
+  : useHttps
+    ? https.createServer(opts)
+    : http.createServer();
 
 server.on("request", async (req, res) => {
-  const requestId = randomUUID();
+  const host = req.headers.host ?? req.headers[":authority"] ?? "localhost";
+  const url = new URL(`http${useHttps ? "s" : ""}://${host}${req.url}`);
+
+  const requestId = crypto.randomUUID();
   console.log(
     `${currentTime()} :: New request detected: ${req.method ?? "REQUEST"} ${
       req.url ?? "nil"
-    } - assigned RequestID:${requestId}`
-  );
-  const url = new URL(
-    `http${useHttps ? "s" : ""}://${process.env.HOST ?? "localhost"}${req.url}`
+    } - assigned RequestID:${requestId}`,
   );
 
   const pathname = url.pathname;
   if (!routes.has(pathname)) {
-    res.writeHead(404, { "content-type": req.headers.accept ?? "text/plain" });
-    console.log(
-      `${currentTime()} :: RequestID:${requestId} - invalid resource request (returning 404)`
-    );
+    res.statusCode = 404;
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
     return res.end(`ERROR 404 ${req.method} ${pathname} not valid resource`);
   }
+
   if (
     !req.method ||
     !validRoutes.has(`${req.method?.toUpperCase()} ${pathname}`)
   ) {
-    res.writeHead(405, { "content-type": req.headers.accept ?? "text/plain" });
+    res.statusCode = 405;
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
     console.log(
-      `${currentTime()} :: RequestID::${requestId} - invalid HTTP method (returing 405)`
+      `${currentTime()} :: RequestID::${requestId} - invalid HTTP method (returning 405)`,
     );
     return res.end(
-      `ERROR 405 ${req.method ?? "REQUEST"} ${pathname} uses incorrect method`
+      `ERROR 405 ${req.method ?? "REQUEST"} ${pathname} uses incorrect method`,
     );
   }
 
   const data = validRoutes.get(`${req.method.toUpperCase()} ${pathname}`);
   if (!data) {
-    res.writeHead(500, { "content-type": "application/json" });
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.write(
       JSON.stringify({
         error: 500,
         response: "error while retrieving data; try again later",
-      })
+      }),
     );
     nonfatalException();
     console.error(
-      `RequestID:${requestId} - unknown error while retrieving data (returing 500)`
+      `RequestID:${requestId} - unknown error while retrieving data (returning 500)`,
     );
     console.error(
-      `RequestID:${requestId} - could be that key was removed after .has() check`
+      `RequestID:${requestId} - could be that key was removed after .has() check`,
     );
     return res.end();
   }
 
   if (!data.external) {
+    if (req.method === "HEAD") {
+      const getKey = `GET ${pathname}`;
+      if (!validRoutes.has(getKey)) {
+        res.statusCode = 405;
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        return res.end();
+      }
+
+      const headData = validRoutes.get(getKey);
+      if (!headData.external) {
+        try {
+          const stat = await fs.stat(headData.file);
+          res.statusCode = 200;
+          res.setHeader("Content-Type", headData.fileType);
+          res.setHeader("Content-Length", stat.size);
+          return res.end();
+        } catch {
+          res.statusCode = 500;
+          return res.end();
+        }
+      } else {
+        req.body = "";
+        try {
+          const [statusCode, headers] = await headData.func(req);
+          res.writeHead(statusCode, headers);
+          return res.end();
+        } catch {
+          res.statusCode = 500;
+          return res.end();
+        }
+      }
+    }
     try {
-      const fileContent = await fs.readFile(data.file, "utf8");
+      const fileContent = await fs.readFile(data.file);
       const ftype = data.fileType;
 
-      res.writeHead(200, {
-        "content-type": MIME.has(ftype) ? MIME.get(ftype) : "text/plain",
-      });
+      res.statusCode = 200;
+      res.setHeader("Content-Type", ftype);
       res.write(fileContent);
       console.log(
-        `${currentTime()} :: RequestID:${requestId} - successful (returing 200)`
+        `${currentTime()} :: RequestID:${requestId} - successful (returning 200)`,
       );
       return res.end();
     } catch (error) {
@@ -241,38 +313,71 @@ server.on("request", async (req, res) => {
       console.error(`RequestID:${requestId} - ${error}`);
       console.log(`RequestID:${requestId} - returning 500`);
 
-      res.writeHead(500, {
-        "content-type": "text/plain",
-      });
+      res.statusCode = 500;
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
       return res.end("500 error retrieving file content");
     }
   } else {
     const func = data.func;
-    const [statusCode, headers, content] = func(req);
-    if (
-      !statusCode ||
-      !headers ||
-      !content ||
-      typeof statusCode !== "number" ||
-      !(headers instanceof Object) ||
-      typeof content !== "string"
-    ) {
-      res.writeHead(500, { "content-type": "text/plain" });
-      res.write("500 invalid return schema");
 
-      nonfatalException();
-      console.error(
-        `RequestID:${requestId} - invalid return schema for resource ${pathname} (returning 500)`
+    const MAX_BODY = 1_000_000;
+
+    const body = ["POST", "PUT", "PATCH"].includes(req.method)
+      ? await new Promise((resolve, reject) => {
+          const chunks = [];
+          let size = 0;
+
+          req.on("data", (chunk) => {
+            size += chunk.length;
+            if (size > MAX_BODY) {
+              reject(new Error("Payload too large"));
+              req.destroy();
+              return;
+            }
+            chunks.push(chunk);
+          });
+
+          req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+          req.on("error", reject);
+          req.on("aborted", () => reject(new Error("Request aborted")));
+        })
+      : "";
+    req.body = body;
+
+    try {
+      const [statusCode, headers, content] = await func(req);
+      if (
+        typeof statusCode !== "number" ||
+        headers == null ||
+        typeof headers !== "object" ||
+        typeof content !== "string"
+      ) {
+        res.statusCode = 500;
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.write("500 invalid return schema");
+
+        nonfatalException();
+        console.error(
+          `RequestID:${requestId} - invalid return schema for resource ${pathname} (returning 500)`,
+        );
+        return res.end();
+      }
+
+      res.writeHead(statusCode, headers);
+      res.write(content);
+      console.log(
+        `${currentTime()} :: RequestID:${requestId} - successful (returning ${statusCode})`,
       );
       return res.end();
+    } catch (error) {
+      nonfatalException();
+      console.error(
+        `RequestID:${requestId} - external handler failed: ${error}`,
+      );
+      res.statusCode = 500;
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      return res.end("500 internal server error");
     }
-
-    res.writeHead(statusCode, headers);
-    res.write(content);
-    console.log(
-      `${currentTime()} :: RequestID:${requestId} - successful (returing 200)`
-    );
-    return res.end();
   }
 });
 
@@ -280,11 +385,6 @@ server.listen(port, "0.0.0.0", () =>
   console.log(
     `${currentTime()} :: listening at ${
       useHttps ? "https" : "http"
-    }://localhost:${port}`
-  )
+    }://localhost:${port}`,
+  ),
 );
-
-process.on("SIGINT", () => {
-  server.close();
-  process.exit(0);
-});
