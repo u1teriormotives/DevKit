@@ -12,8 +12,9 @@ Documentation
 # file types
 **/*.lock
 **/*.ignore
+**/*.lscache
 **/*.o
-*.sln
+**/*.sln
 **/*.ttf
 **/.DS_Store
 **/package-lock.json
