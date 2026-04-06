@@ -3,7 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use dk_ir::parse_file;
+use dk_parse::parse_file;
 
 fn main() -> ExitCode {
     match run() {
@@ -63,6 +63,9 @@ fn run() -> Result<(), String> {
 }
 
 fn print_help() {
-    println!("dk_ir <input> [--ast] [-o <path>]");
-    println!("dk_ir <input> [--pretty] [-o <path>]");
+    let mut args = env::args();
+    let Some(arg) = args.nth(0) else { panic!("No binary location?") };
+
+    println!("{} <input> [--ast] [-o <path>]", arg.as_str());
+    println!("{} <input> [--pretty] [-o <path>]", arg.as_str());
 }
