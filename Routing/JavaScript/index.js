@@ -236,25 +236,29 @@ server.on("request", async (req, res) => {
   const host = req.headers.host ?? req.headers[":authority"] ?? "localhost";
   const url = new URL(`http${useHttps ? "s" : ""}://${host}${req.url}`);
 
-  const ip = req.socket.remoteAddress ?? "unknown";
-  const now = Date.now();
-  const record = ratelimit.get(ip) ?? { count: 0, windowStart: now };
+  if (__DKRATELIMITING.enabled) {
+    const ip = req.socket.remoteAddress ?? "unknown";
+    const now = Date.now();
+    const record = ratelimit.get(ip) ?? { count: 0, windowStart: now };
 
-  if (now - record.windowStart > WINDOW_MS) {
-    record.count = 0;
-    record.windowStart = now;
-  }
-  record.count++;
-  ratelimit.set(ip, record);
+    if (now - record.windowStart > __DKRATELIMITING.timeframe) {
+      record.count = 0;
+      record.windowStart = now;
+    }
+    record.count++;
+    ratelimit.set(ip, record);
 
-  if (record.count > MAX_REQUESTS) {
-    res.statusCode = 429;
-    res.setHeader("Content-Type", "text/plain; charset=utf-8");
-    res.setHeader(
-      "Retry-After",
-      Math.ceil((record.windowStart + WINDOW_MS - now) / 1000),
-    );
-    return res.end("429 Too Many Requests");
+    if (record.count > __DKRATELIMITING.max_requests) {
+      res.statusCode = 429;
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.setHeader(
+        "Retry-After",
+        Math.ceil(
+          (record.windowStart + __DKRATELIMITING.timeframe - now) / 1000,
+        ),
+      );
+      return res.end("429 Too Many Requests");
+    }
   }
 
   const requestId = crypto.randomUUID();
