@@ -33,13 +33,11 @@ const DKROUTE_ENPOINT string = "https://github.com/u1teriormotives/DevKit/raw/re
 const DEFAULT_INDEX_FILE_ENDPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/generic_index.html"
 const APIKEY_GENERATOR_FILE_ENDPOINT string = "https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Libraries/APIKeyGenerator.c"
 
+// add in actually installing it to your $PATH later; when i rewrite this to be prettier
 func getCSharpEndpoints() []string {
 	return []string{
-		"https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/C%23/ProcessHandler.cs",
 		"https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/C%23/Program.cs",
-		"https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/C%23/appsettings.Development.json",
-		"https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/C%23/appsettings.json",
-		"https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/C%23/route.csproj",
+		"https://github.com/u1teriormotives/DevKit/raw/refs/heads/main/Routing/C%23/dkroute-external-runner.mjs",
 	}
 }
 
