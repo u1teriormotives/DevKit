@@ -26,6 +26,8 @@ Documentation
 **/*.wat
 # file types in various directories
 
+# specific files in the root
+
 # specific files in various directories
 Applications/WebGPU Test/webgpu
 CLI/main
