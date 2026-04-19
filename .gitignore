@@ -26,11 +26,6 @@ Documentation
 **/*.wat
 # file types in various directories
 
-# specific files in the root
-commit
-push
-normalize.js
-files.js
 # specific files in various directories
 Applications/WebGPU Test/webgpu
 CLI/main
