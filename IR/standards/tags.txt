@@ -84,7 +84,7 @@
                 (rel="value" /)                         => relationship between this element and target-url
                 (render-priority="integer" /)           => priority hint (lowest -> first, highest -> last)
                 (required="boolean" /)                  => if a writeable element is required to have something in it
-                (sandbox-polity="value" /)              => what the element may do
+                (sandbox-policy="value" /)              => what the element may do
                 (sandboxed="boolean" /)                 => if the element is separated from the rest of the document
                 (selectable="boolean" /)                => if element text can be selected or not
                 (selected="boolean" /)                  => if an element is currently selected by the client in a group of options
