@@ -1,5 +1,5 @@
 # DevKit
-A WebGPU-Based Schema Webpage Renderer with a Twist
+A GPU-Based Schema Renderer with a Twist
 
 ---
 
