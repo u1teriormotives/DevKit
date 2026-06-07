@@ -187,4 +187,3 @@
     Self-contained children:    [[internal-styling] -> styleObject /]           =>  styling for a specific element
                                 [[event-handler(eventName)] -> scriptObject /]  =>  internal script that fires when an
                                                                                     element's specific event fires
-                                
